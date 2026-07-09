@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import json
 
@@ -12,8 +12,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
-from config import settings
-from utils import ensure_directories, save_joblib, save_json, write_markdown_table
+from src.config import settings
+from src.utils import ensure_directories, save_joblib, save_json, write_markdown_table
 
 try:
     from xgboost import XGBClassifier
@@ -219,3 +219,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

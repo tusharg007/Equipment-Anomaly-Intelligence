@@ -1,13 +1,13 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import argparse
 
 import pandas as pd
 from joblib import load
 
-from config import settings
-from train_defect_model import CATEGORICAL_FEATURES, NUMERIC_FEATURES
-from utils import ensure_directories
+from src.config import settings
+from src.train_defect_model import CATEGORICAL_FEATURES, NUMERIC_FEATURES
+from src.utils import ensure_directories
 
 
 def main() -> None:
@@ -32,3 +32,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

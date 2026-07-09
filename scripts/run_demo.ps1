@@ -1,6 +1,6 @@
 ﻿$ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$env:PYTHONPATH = "$projectRoot;$projectRoot\src"
+$env:PYTHONPATH = "$projectRoot"
 
 function Invoke-Step {
     param(
@@ -41,3 +41,4 @@ try {
 finally {
     Pop-Location
 }
+

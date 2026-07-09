@@ -17,6 +17,10 @@ select
     pressure_instability,
     defect_probability,
     defect_flag,
-    defect_type,
+    case
+        when coalesce(defect_flag, 0) = 0 then 'No Defect'
+        when nullif(trim(defect_type), '') is null then 'No Defect'
+        else defect_type
+    end as defect_type,
     defect_count
 from {{ source('ops_raw', 'quality_checks') }}

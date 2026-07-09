@@ -1,10 +1,10 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import pandas as pd
 from sklearn.ensemble import IsolationForest
 
-from config import settings
-from utils import ensure_directories, save_joblib
+from src.config import settings
+from src.utils import ensure_directories, save_joblib
 
 
 FEATURE_FILE = settings.processed_data_dir / "ml_training_dataset.csv"
@@ -83,3 +83,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

@@ -1,6 +1,6 @@
 ﻿$ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$env:PYTHONPATH = "$projectRoot;$projectRoot\src"
+$env:PYTHONPATH = "$projectRoot"
 
 Push-Location $projectRoot
 try {
@@ -29,3 +29,4 @@ try {
 finally {
     Pop-Location
 }
+

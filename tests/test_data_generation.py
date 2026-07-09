@@ -1,9 +1,9 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import pandas as pd
 
-from config import settings
-from generate_synthetic_data import main as generate_data
+from src.config import settings
+from src.generate_synthetic_data import main as generate_data
 
 
 def test_data_generation_outputs():
@@ -18,3 +18,4 @@ def test_data_generation_outputs():
         df = pd.read_csv(file_path)
         assert required_columns.issubset(df.columns)
         assert not df.empty
+

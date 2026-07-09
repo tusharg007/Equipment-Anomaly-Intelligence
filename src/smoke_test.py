@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import subprocess
 import sys
@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from config import settings
+from src.config import settings
 
 
 PROJECT_ROOT = settings.project_root
@@ -28,7 +28,7 @@ PREDICTION_FILES = {
 
 
 def run_script(script_name: str) -> None:
-    subprocess.run([sys.executable, str(PROJECT_ROOT / "src" / script_name)], check=True, cwd=PROJECT_ROOT)
+    subprocess.run([sys.executable, "-m", f"src.{Path(script_name).stem}"], check=True, cwd=PROJECT_ROOT)
 
 
 def assert_columns(file_path: Path, required_columns: set[str]) -> None:
@@ -78,3 +78,5 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+

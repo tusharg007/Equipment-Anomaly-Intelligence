@@ -1,12 +1,12 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from pathlib import Path
 
 import pandas as pd
 from sqlalchemy import create_engine, text
 
-from config import settings
-from utils import ensure_directories
+from src.config import settings
+from src.utils import ensure_directories
 
 
 TABLE_FILES = {
@@ -100,3 +100,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

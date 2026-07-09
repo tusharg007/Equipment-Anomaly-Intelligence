@@ -1,10 +1,10 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
 from api.main import app
-from generate_synthetic_data import main as generate_data
-from train_defect_model import main as train_model
+from src.generate_synthetic_data import main as generate_data
+from src.train_defect_model import main as train_model
 
 
 client = TestClient(app)
@@ -55,3 +55,4 @@ def test_predict_defect_risk_endpoint():
     response = client.post("/predict/defect-risk", json=payload)
     assert response.status_code == 200
     assert "records" in response.json()
+

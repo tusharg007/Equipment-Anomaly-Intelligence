@@ -12,7 +12,8 @@ models:
       - name: quality_risk_band
         tests:
           - accepted_values:
-              values: ['Low', 'Medium', 'High']
+              arguments:
+                values: ['Low', 'Medium', 'High']
   - name: mart_oee_dashboard
     columns:
       - name: line_id
@@ -24,4 +25,5 @@ models:
       - name: maintenance_risk_band
         tests:
           - accepted_values:
-              values: ['Low', 'Medium', 'High', 'Critical']
+              arguments:
+                values: ['Low', 'Medium', 'High', 'Critical']

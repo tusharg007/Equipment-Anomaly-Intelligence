@@ -1,9 +1,9 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import pandas as pd
 
-from config import settings
-from utils import ensure_directories, save_json
+from src.config import settings
+from src.utils import ensure_directories, save_json
 
 
 REQUIRED_FILES = {
@@ -36,3 +36,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

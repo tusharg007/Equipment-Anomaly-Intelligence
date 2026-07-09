@@ -13,12 +13,14 @@ models:
         tests:
           - not_null
           - relationships:
-              to: ref('stg_machines')
-              field: machine_id
+              arguments:
+                to: ref('stg_machines')
+                field: machine_id
       - name: shift
         tests:
           - accepted_values:
-              values: ['Night', 'Day', 'Evening']
+              arguments:
+                values: ['Night', 'Day', 'Evening']
   - name: stg_quality_checks
     columns:
       - name: quality_check_id
@@ -26,6 +28,9 @@ models:
       - name: defect_type
         tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: ['Assembly', 'Dimensional', 'Electrical', 'No Defect', 'Surface']
   - name: stg_downtime_events
     columns:
       - name: downtime_event_id
@@ -41,4 +46,5 @@ models:
       - name: shift
         tests:
           - accepted_values:
-              values: ['Night', 'Day', 'Evening']
+              arguments:
+                values: ['Night', 'Day', 'Evening']

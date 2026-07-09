@@ -1,11 +1,11 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from pathlib import Path
 
 import pandas as pd
 from joblib import load
 
-from config import settings
+from src.config import settings
 
 
 def _load_csv(file_path: Path) -> pd.DataFrame | None:
@@ -96,3 +96,4 @@ def predict_defect_risk(records: list[dict]) -> dict:
     frame["predicted_defect_probability"] = probabilities
     frame["predicted_defect_flag"] = (probabilities >= 0.5).astype(int)
     return {"records": frame.to_dict(orient="records")}
+
