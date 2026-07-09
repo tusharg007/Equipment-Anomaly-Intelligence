@@ -287,7 +287,7 @@ README.md
 - `PROJECT_STATUS.md`
 - `RESUME_BULLETS.md`
 
-## Supported Resume Claims
+## Summary
 - Built a production-oriented manufacturing analytics platform prototype using Python, PostgreSQL, dbt, FastAPI, and Metabase.
 - Developed ML pipelines for quality defect prediction and equipment anomaly detection using feature engineering, validation metrics, and explainability artifacts.
 - Designed downtime risk scoring and maintenance priority logic to support human-in-the-loop operational decision-making.
