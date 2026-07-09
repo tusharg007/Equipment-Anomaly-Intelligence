@@ -1,8 +1,0 @@
-[
-  "tests/test_api.py::test_health_endpoint",
-  "tests/test_api.py::test_key_endpoints_return_payloads",
-  "tests/test_api.py::test_predict_defect_risk_endpoint",
-  "tests/test_data_generation.py::test_data_generation_outputs",
-  "tests/test_ml_pipeline.py::test_ml_pipeline_outputs",
-  "tests/test_risk_scoring.py::test_risk_scores_are_bounded"
-]
