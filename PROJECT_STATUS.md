@@ -1,53 +1,69 @@
 # Project Status
 
-## What Currently Works
-- Synthetic manufacturing data generation for machines, batches, sensors, quality checks, downtime, and maintenance
+## Overall State
+The project is in a verified, runnable local prototype state for synthetic manufacturing analytics. The Python pipeline, PostgreSQL loading, dbt transformations/tests, FastAPI endpoints, Metabase dashboard workflow, and screenshot generation have all been exercised locally.
+
+## Verified Components
+- Synthetic manufacturing data generation for machines, batches, sensors, quality checks, downtime events, and maintenance logs
 - Processed ML training dataset generation in `data/processed/ml_training_dataset.csv`
-- Defect prediction training with Logistic Regression, RandomForest, and optional XGBoost
-- Isolation Forest plus rule-based anomaly detection
+- Defect prediction training with Logistic Regression, RandomForest, and optional XGBoost fallback support
+- Isolation Forest plus rule-based anomaly detection outputs
 - Downtime risk scoring and maintenance priority outputs
-- PostgreSQL loader with environment-variable configuration, rerun-safe replace logic, and index creation
-- dbt staging, intermediate, and mart models for manufacturing analytics
-- FastAPI endpoints for health, KPIs, machine health, anomalies, maintenance priority, and defect-risk inference
-- Smoke test and pytest coverage for the core pipeline
+- Local Python demo pipeline execution
+- Smoke test execution
+- `pytest` execution
+- Docker PostgreSQL container startup
+- PostgreSQL data loading through `python -m src.load_to_postgres`
+- dbt validation:
+  - `dbt debug` passed
+  - `dbt run` passed with `PASS=14 WARN=0 ERROR=0`
+  - `dbt test` passed with `PASS=31 WARN=0 ERROR=0`
+- Verified dbt marts in schema `analytics`:
+  - `mart_machine_health`
+  - `mart_quality_risk`
+  - `mart_oee_dashboard`
+  - `mart_maintenance_priority`
+- FastAPI docs capture saved at `assets/api_docs.png`
+- Metabase running locally at `http://127.0.0.1:3000`
+- Metabase connected to PostgreSQL using host `postgres`, port `5432`, database `manufacturing`
+- Metabase dashboard created successfully
+- Metabase dashboard screenshots saved at:
+  - `assets/metabase_dashboard_top.png`
+  - `assets/metabase_dashboard_bottom.png`
 
-## Partially Implemented
-- Docker and docker-compose are ready, but full local service validation depends on installing Python/dbt dependencies and starting containers
-- dbt tests are defined but were not executed in this environment because PostgreSQL/dbt services were not started here
-- CI workflow is lightweight and GitHub-ready, but not exercised in this local sandbox
+## What The Project Demonstrates
+- AI/ML experimentation for manufacturing quality prediction
+- Feature engineering and preprocessing on synthetic industrial-style data
+- Unsupervised anomaly detection for equipment monitoring
+- Heuristic downtime risk scoring and maintenance prioritization
+- Analytics engineering with PostgreSQL and dbt
+- API and dashboard delivery for local stakeholder-style review
+- Reproducibility through scripts, tests, and local verification steps
 
-## What Was Broken And Fixed
-- Added structured configuration via `.env` and `src/config.py`
-- Reworked data generation to create `ml_training_dataset.csv` and stronger synthetic relationships
-- Hardened training outputs to include metrics JSON, classification report JSON, confusion matrix CSV, and model artifacts
-- Upgraded anomaly detection output to include timestamp-level anomaly scores, flags, and reasons
-- Expanded downtime risk scoring to include explainability fields and a maintenance priority file
-- Added API, tests, Dockerfile, GitHub Actions workflow, and documentation artifacts missing from the original MVP
-- Updated Makefile commands so they map to real files and entrypoints
+## Honest Limitations
+- All manufacturing data is synthetic
+- This is a production-oriented prototype, not a real plant deployment
+- No claim should be made that the system was used in a live GM or factory environment
+- Downtime risk scoring is decision support logic and requires calibration against real plant history before operational use
+- Dashboard and API flows are locally verified prototype workflows, not a production hosting setup
 
-## How To Run End-To-End
-1. `python -m pip install -r requirements.txt`
-2. Optional: copy `.env.example` to `.env`
-3. `make generate-data`
-4. `make train`
-5. `make anomalies`
-6. `make risk`
-7. `make smoke-test`
-8. Optional database and analytics steps:
-   - `make up`
-   - `make load-db`
-   - `make dbt-run`
-   - `make api`
+## Recommended Usage
+Use this project for:
+- portfolio demonstration
+- interview walkthroughs
+- manufacturing analytics discussion
+- AI/ML pipeline storytelling
+- analytics engineering and dashboarding examples
 
-## Remaining Limitations
-- The data is synthetic and cannot validate plant performance claims
-- Risk scores and maintenance recommendations are heuristic decision-support logic
-- API reads generated artifacts rather than a fully orchestrated online feature store
-- No authentication or deployment orchestration is included
+Do not use this project to claim:
+- real plant deployment
+- real business savings
+- real maintenance or downtime reduction
+- production-calibrated operating thresholds
 
-## Production-Oriented Next Improvements
-- Add data versioning and richer logging for pipeline runs
-- Add calibration analysis for defect probabilities
-- Add scenario-based synthetic generation controls for more controlled experiments
-- Add API pagination and database-backed query paths
-- Add scheduled batch pipeline execution and artifact tracking
+## Next Practical Improvements
+- Add calibration analysis for defect and downtime risk scores
+- Add experiment tracking and run metadata logging
+- Add database-backed API reads instead of relying primarily on local artifacts
+- Add richer Metabase dashboard cards and drill-down filters
+- Add deployment hardening only if the project scope expands beyond prototype use

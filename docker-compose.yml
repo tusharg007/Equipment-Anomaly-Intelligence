@@ -14,7 +14,8 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   metabase:
-    image: metabase/metabase:latest
+    image: metabase/metabase:v0.50.31
+    platform: linux/amd64
     container_name: mfg_quality_metabase
     depends_on:
       - postgres

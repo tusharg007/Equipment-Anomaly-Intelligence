@@ -29,3 +29,12 @@ dbt_mfg/logs/
 dbt_mfg/target/
 dbt_mfg/.user.yml
 dbt_mfg/profiles.yml
+
+# Local runtime files
+.env
+.venv/
+.pytest_cache/
+dbt_mfg/profiles.yml
+dbt_mfg/logs/
+dbt_mfg/target/
+dbt_mfg/.user.yml
