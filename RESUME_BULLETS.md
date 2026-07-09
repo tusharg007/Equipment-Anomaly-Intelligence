@@ -3,7 +3,7 @@
 ## Short 3-Bullet Version
 - Built a production-oriented manufacturing analytics prototype using Python, PostgreSQL, dbt, FastAPI, and Metabase to support synthetic-data quality prediction, equipment anomaly detection, downtime risk scoring, and dashboarding.
 - Developed end-to-end ML and analytics pipelines covering preprocessing, feature engineering, model validation, defect prediction, anomaly detection, maintenance prioritization, and OEE-style reporting.
-- Verified the local workflow with smoke tests, `pytest`, PostgreSQL loading, dbt run/test success, API documentation, and dashboard screenshots for recruiter-friendly project proof.
+- Verified the local workflow with smoke tests, `pytest`, PostgreSQL loading, dbt run and test success, API documentation, and dashboard screenshots for recruiter-friendly project proof.
 
 ## Strong 5-Bullet Version
 - Built a production-oriented manufacturing analytics platform prototype to monitor machine health, predict quality defects, detect equipment anomalies, and prioritize downtime risk across synthetic production lines.
@@ -22,11 +22,11 @@ Use claims like:
 
 ## Claims To Avoid
 Do not say:
-- the project used real GM data or real plant production data
+- the project used real plant production data
 - the system was deployed in a live factory
 - the project produced real downtime reduction or cost savings
 - the risk scoring was calibrated on real production outcomes
-- the project was used by GM operations teams
+- the project was used by a live manufacturing operations team
 
 ## Interview Framing
 Use this project as a production-oriented prototype example: synthetic manufacturing data flows into PostgreSQL and dbt, analytics features support quality prediction and anomaly detection, downtime risk is prioritized for maintenance review, and local dashboards plus API endpoints expose the outputs in a recruiter-friendly way.

@@ -1,299 +1,311 @@
 # Manufacturing Quality & Equipment Anomaly Intelligence Platform
 
-A production-oriented manufacturing analytics prototype that uses synthetic manufacturing data to demonstrate quality prediction, equipment anomaly detection, downtime risk scoring, analytics engineering, dashboarding, and API delivery in one local end-to-end workflow.
+Production-oriented manufacturing analytics prototype for quality prediction, equipment anomaly detection, downtime risk scoring, and OEE-style operational decision support.
 
-## Project Overview
-This repository simulates a manufacturing environment where machine telemetry, production batches, quality checks, downtime events, and maintenance logs are connected through a reproducible Python, PostgreSQL, dbt, Metabase, and FastAPI pipeline. It is intentionally positioned as a prototype for portfolio and interview discussion, not as a real plant deployment.
+![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-API%20Layer-009688?logo=fastapi&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Warehouse-336791?logo=postgresql&logoColor=white)
+![dbt](https://img.shields.io/badge/dbt-Analytics%20Engineering-FF694B?logo=dbt&logoColor=white)
+![Metabase](https://img.shields.io/badge/Metabase-Dashboarding-509EE3?logo=metabase&logoColor=white)
+![scikit-learn](https://img.shields.io/badge/scikit--learn-ML-F7931E?logo=scikitlearn&logoColor=white)
+[![CI](https://github.com/tusharg007/Equipment-Anomaly-Intelligence/actions/workflows/ci.yml/badge.svg)](https://github.com/tusharg007/Equipment-Anomaly-Intelligence/actions/workflows/ci.yml)
 
-## Business Problem
-Manufacturing teams need better ways to:
-- detect early quality drift
-- identify abnormal equipment behavior
-- prioritize maintenance review
-- understand operational efficiency across lines and shifts
+## Executive Summary
+Manufacturing and operations teams care about defects, downtime, equipment instability, and line efficiency because those issues directly affect throughput, rework, maintenance load, and operator decision-making. A useful analytics workflow needs to connect raw telemetry, quality outcomes, downtime history, and maintenance context instead of treating each signal in isolation.
 
-This project shows how AI/ML, analytics engineering, and dashboarding can support human-in-the-loop operational decision making.
+This repository demonstrates that workflow as a production-oriented prototype built on synthetic manufacturing data. It moves from raw CSV generation to PostgreSQL loading, dbt transformation layers, machine learning outputs, FastAPI endpoints, and dashboard-ready assets, while keeping the documentation honest about model limitations and synthetic-data constraints.
+
+The result is a recruiter-friendly and technically reviewable project that shows how manufacturing analytics, AI/ML, dashboarding, testing, and engineering discipline can fit together in a realistic local prototype.
+
+## Key Features
+- Synthetic manufacturing data generation with correlated operational signals across quality, downtime, and maintenance events
+- PostgreSQL warehouse for raw and analytics-ready manufacturing data
+- dbt staging, intermediate, and mart layers for plant-style analytics modeling
+- Defect prediction pipeline with model evaluation artifacts
+- Equipment anomaly detection using Isolation Forest and rule-based checks
+- Downtime risk scoring for decision-support prioritization
+- Maintenance priority recommendations for high-risk machines
+- OEE-style operational KPIs for line-level performance review
+- FastAPI serving layer for KPIs, machine health, anomalies, maintenance, and defect-risk inference
+- Metabase dashboard workflow with screenshots and dashboard query templates
+- Responsible AI and model documentation including a model card and limitations notes
+- pytest coverage, smoke tests, PowerShell helpers, Docker Compose setup, and GitHub Actions CI
+
+## Recruiter / Interviewer Quick Scan
+| What this project demonstrates | Evidence in repo |
+|---|---|
+| Manufacturing analytics and plant-style data modeling | `src/generate_synthetic_data.py`, `dbt_mfg/models/`, `data/sample/` |
+| AI/ML model development | `src/train_defect_model.py`, `reports/model_evaluation.md`, `reports/metrics.json` |
+| Anomaly detection | `src/detect_anomalies.py`, `data/predictions/anomaly_scores.csv` |
+| Operations efficiency and downtime prioritization | `src/downtime_risk_scoring.py`, `data/predictions/downtime_risk_scores.csv`, `data/predictions/maintenance_priority.csv` |
+| Dashboarding and BI | `metabase/dashboard_queries.sql`, `assets/metabase_dashboard_top.png`, `assets/metabase_dashboard_bottom.png` |
+| Engineering discipline | `tests/`, `.github/workflows/ci.yml`, `docker-compose.yml`, `Makefile`, `scripts/` |
+| Communication and governance | `reports/model_card.md`, `reports/responsible_ai_notes.md`, `PROJECT_STATUS.md` |
+
+## Architecture
+```mermaid
+flowchart LR
+    A["Synthetic Data Generator"] --> B["Raw CSVs"]
+    B --> C["PostgreSQL"]
+    C --> D["dbt Staging"]
+    D --> E["dbt Intermediate"]
+    E --> F["dbt Marts"]
+    B --> G["ML Pipeline"]
+    F --> G
+    G --> H["Predictions and Reports"]
+    H --> I["FastAPI"]
+    H --> J["Metabase Dashboard"]
+```
+
+## Tech Stack
+### Programming / Data
+- Python
+- Pandas
+- NumPy
+
+### Machine Learning
+- scikit-learn
+- Logistic Regression
+- RandomForest
+- optional XGBoost workflow support when installed
+- Isolation Forest
+
+### Data Warehouse / Analytics Engineering
+- PostgreSQL
+- dbt
+
+### BI / Dashboarding
+- Metabase
+- matplotlib for generated dashboard-style visuals
+
+### API / Serving
+- FastAPI
+- Uvicorn
+
+### Quality / DevOps
+- pytest
+- GitHub Actions CI
+- Docker Compose
+- PowerShell helper scripts
+
+## Dataset Design
+Synthetic data is used so the project can demonstrate realistic manufacturing analytics patterns without exposing proprietary plant data or pretending to represent a live production system. The generator creates data relationships that are useful for experimentation, preprocessing, model evaluation, dashboarding, and interview discussion.
+
+Simulated entities include:
+- machines
+- production lines
+- sensor readings
+- production batches
+- quality checks
+- downtime events
+- maintenance logs
+
+Modeled relationships include:
+- higher temperature and vibration increasing defect and downtime risk
+- older machines showing more anomalous behavior
+- maintenance events reducing near-term risk signals
+- pressure instability and cycle-time drift affecting quality outcomes
+- shift-level variation across operational patterns
+
+| CSV file | Purpose |
+|---|---|
+| `data/raw/machines.csv` | Machine master data including line assignment, machine type, age, and baseline health |
+| `data/raw/production_batches.csv` | Batch-level production context including line, shift, product type, and operator context |
+| `data/raw/sensor_readings.csv` | Telemetry signals such as temperature, vibration, pressure, cycle time, and energy consumption |
+| `data/raw/quality_checks.csv` | Quality inspection outcomes, defect probability context, and defect labels |
+| `data/raw/downtime_events.csv` | Downtime events linked to machine conditions and event duration |
+| `data/raw/maintenance_logs.csv` | Maintenance interventions and post-maintenance status context |
+| `data/processed/ml_training_dataset.csv` | Feature-engineered modeling dataset used for defect prediction |
+
+## Pipeline Workflow
+1. Generate synthetic plant-style data.
+2. Run data quality checks.
+3. Load raw and processed data into PostgreSQL.
+4. Transform data with dbt staging, intermediate, and mart layers.
+5. Train the defect prediction model.
+6. Detect equipment anomalies.
+7. Score downtime risk and maintenance priority.
+8. Serve outputs through FastAPI.
+9. Build the dashboard in Metabase.
+10. Document metrics, assumptions, and limitations in reports.
+
+## Machine Learning Methodology
+### Defect Prediction
+The primary supervised task is defect prediction using the synthetic manufacturing training dataset. The target variable is `defect_flag`, and the feature set includes operational signals such as temperature, vibration, pressure, cycle time, maintenance recency, anomaly-related indicators, line/shift context, and derived quality-risk features.
+
+The workflow compares a baseline Logistic Regression model with a tree-based RandomForest model, with optional XGBoost support when installed. Evaluation artifacts include:
+- ROC-AUC
+- precision
+- recall
+- F1 score
+- confusion matrix
+- feature importance
+
+### Anomaly Detection
+Equipment anomaly detection combines:
+- Isolation Forest for unsupervised outlier detection
+- rule-based z-score checks for sensor drift and instability
+
+This produces anomaly scores, flags, and explainable anomaly reasons that can be used downstream for maintenance and downtime review.
+
+### Downtime Risk Scoring
+Downtime risk is modeled as a heuristic decision-support score that combines anomaly behavior, downtime history, sensor drift, and maintenance recency into a 0-100 machine risk score with categorical risk bands.
+
+All metrics and predictions in this repository are generated from synthetic manufacturing data and should be interpreted as prototype validation, not real-world plant performance claims.
+
+## OEE-style Operational KPIs
+The analytics and dashboard workflow includes OEE-style operational indicators to make the prototype more relevant for manufacturing and operations review.
+
+- Availability: estimated operating time relative to downtime impact
+- Performance: cycle-time and throughput-style efficiency indicators
+- Quality: quality outcomes and defect behavior across lines and machines
+- OEE: a combined operational view used as a practical indicator rather than a claim of plant-calibrated production OEE
+
+These KPIs are used as operational indicators in the dbt marts and dashboard views to help connect ML outputs with manufacturing performance context.
+
+## Screenshots
+### FastAPI Documentation
+![FastAPI Docs](assets/api_docs.png)
+
+### Manufacturing Overview
+![Manufacturing Overview](assets/manufacturing_overview.png)
+
+### Machine Health Dashboard
+![Machine Health Dashboard](assets/machine_health_dashboard.png)
+
+### Quality Risk Dashboard
+![Quality Risk Dashboard](assets/quality_risk_dashboard.png)
+
+### Downtime Risk Dashboard
+![Downtime Risk Dashboard](assets/downtime_risk_dashboard.png)
+
+### Maintenance Priority Dashboard
+![Maintenance Priority Dashboard](assets/maintenance_priority_dashboard.png)
+
+### Model Evaluation Summary
+![Model Evaluation Summary](assets/model_evaluation_summary.png)
+
+### Metabase Dashboard
+![Metabase Dashboard Top](assets/metabase_dashboard_top.png)
+![Metabase Dashboard Bottom](assets/metabase_dashboard_bottom.png)
 
 ## Verified End-to-End Locally
-The following workflow has been verified locally:
 - Local Python demo pipeline passed
 - Smoke test passed
-- `pytest` passed
+- `pytest` passed locally
 - Docker PostgreSQL container started successfully
-- `python -m src.load_to_postgres` loaded data into PostgreSQL successfully
+- Data loaded into PostgreSQL successfully
 - `dbt debug --profiles-dir .` passed
-- `dbt run --profiles-dir . --no-partial-parse` passed with `PASS=14 WARN=0 ERROR=0`
-- `dbt test --profiles-dir .` passed with `PASS=31 WARN=0 ERROR=0`
-- dbt analytics marts created in schema `analytics`:
+- `dbt run --profiles-dir . --no-partial-parse` verified with `PASS=14 WARN=0 ERROR=0`
+- `dbt test --profiles-dir .` verified with `PASS=31 WARN=0 ERROR=0`
+- Analytics schema created dbt marts:
   - `mart_machine_health`
   - `mart_quality_risk`
   - `mart_oee_dashboard`
   - `mart_maintenance_priority`
-- Metabase is running locally at [http://127.0.0.1:3000](http://127.0.0.1:3000)
-- Metabase connected successfully to PostgreSQL using host `postgres`, port `5432`, database `manufacturing`
-- Metabase dashboard was created successfully
-- FastAPI docs screenshot and Metabase dashboard screenshots were captured successfully
+- Metabase dashboard connected and created successfully
+- FastAPI docs verified locally
 
-## GM Role Alignment
-- `AI/ML experimentation`: compares Logistic Regression, RandomForest, and optional XGBoost-style workflows using ROC-AUC, precision, recall, F1, confusion matrix, and feature importance outputs
-- `Analytics engineering`: uses PostgreSQL and dbt to transform raw manufacturing records into staging, intermediate, and mart models
-- `Manufacturing analytics`: focuses on quality prediction, equipment anomaly detection, downtime risk scoring, and OEE-style operational KPIs
-- `Automation and reproducibility`: includes Makefile targets, PowerShell scripts, smoke tests, pytest coverage, and screenshot automation
-- `Business communication`: provides dashboard queries, architecture notes, project status documentation, and recruiter-friendly visual artifacts
-
-## Architecture Diagram
-```mermaid
-flowchart LR
-    A["Synthetic Manufacturing Data"] --> B["Python Preprocessing"]
-    B --> C["Processed ML Dataset"]
-    B --> D["PostgreSQL"]
-    D --> E["dbt Models"]
-    C --> F["Defect Prediction"]
-    C --> G["Anomaly Detection"]
-    C --> H["Downtime Risk Scoring"]
-    F --> I["Predictions and Reports"]
-    G --> I
-    H --> I
-    D --> J["Metabase Dashboards"]
-    I --> K["FastAPI Endpoints"]
-    I --> J
-```
-
-## Tech Stack
-- Python
-- Pandas and NumPy
-- scikit-learn
-- XGBoost when installed, otherwise graceful fallback
-- PostgreSQL
-- dbt
-- Metabase
-- FastAPI
-- matplotlib
-- Playwright for automated screenshot capture
-
-## Repository Structure
-```text
-manufacturing-quality-anomaly-platform/
-|-- api/
-|-- assets/
-|-- data/
-|-- dbt_mfg/
-|-- metabase/
-|-- models/
-|-- reports/
-|-- scripts/
-|-- src/
-|-- tests/
-|-- .github/workflows/
-|-- docker-compose.yml
-|-- Dockerfile
-|-- Makefile
-|-- PROJECT_STATUS.md
-|-- README.md
-`-- RESUME_BULLETS.md
-```
-
-## Data Model Explanation
-The synthetic data simulates:
-- machines with machine type, age, baseline health score, and line assignment
-- sensor readings with temperature, vibration, pressure, cycle time, and energy consumption
-- production batches with product type, material batch, operator team, and throughput
-- quality checks with defect probability, defect type, and defect count
-- downtime events linked to abnormal operating conditions
-- maintenance logs used for maintenance recency and operational context
-
-### Synthetic Data Limitations
-All data in this project is synthetic. It is designed to create realistic relationships for experimentation, preprocessing, feature engineering, model validation, dashboard prototyping, and API demonstration. It should not be described as real plant data, plant-validated performance, or deployed manufacturing decision automation.
-
-## Sample Outputs
-To make the repository easier to browse on GitHub, the project includes small representative sample files in `data/sample/`.
-
-Included sample files:
-- `data/sample/sample_machines.csv`
-- `data/sample/sample_sensor_readings.csv`
-- `data/sample/sample_defect_predictions.csv`
-- `data/sample/sample_anomaly_scores.csv`
-- `data/sample/sample_downtime_risk_scores.csv`
-- `data/sample/sample_maintenance_priority.csv` when maintenance priority output is available
-- `data/sample/sample_oee_summary.csv` when an OEE summary output is available
-
-These files contain only 10 to 30 rows each and are intended for quick review, documentation, and recruiter-friendly browsing. Larger generated files in `data/raw`, `data/processed`, and `data/predictions` can be regenerated locally.
-
-## Project Screenshots
-The screenshots below are verified local artifacts. `api_docs.png` is a real FastAPI docs capture. The Metabase screenshots are real local Metabase dashboard captures.
-
-![FastAPI Docs](assets/api_docs.png)
-![Metabase Dashboard Top](assets/metabase_dashboard_top.png)
-![Metabase Dashboard Bottom](assets/metabase_dashboard_bottom.png)
-
-## Pipeline Workflow
-1. Generate synthetic raw manufacturing data.
-2. Build processed ML features in `data/processed/ml_training_dataset.csv`.
-3. Load raw and processed data into PostgreSQL.
-4. Build dbt staging, intermediate, and mart models.
-5. Train quality prediction models.
-6. Detect equipment anomalies.
-7. Score downtime risk and maintenance priority.
-8. Expose outputs through Metabase-ready SQL and FastAPI endpoints.
-
-## ML Methodology
-- Defect prediction models:
-  - Logistic Regression baseline
-  - RandomForest
-  - optional XGBoost if installed
-- Model selection:
-  - compares ROC-AUC, precision, recall, F1, and a composite score
-- Outputs:
-  - `reports/model_evaluation.md`
-  - `reports/metrics.json`
-  - `reports/classification_report.json`
-  - `reports/confusion_matrix.csv`
-  - `data/predictions/feature_importance.csv`
-  - `data/predictions/defect_predictions.csv`
-
-## Anomaly Detection Method
-Equipment anomaly detection combines:
-- Isolation Forest for unsupervised outlier detection
-- rule-based z-score checks for temperature, vibration, pressure, cycle time, and energy consumption
-
-The output includes anomaly score, anomaly flag, anomaly reason, machine ID, and timestamp-level records.
-
-## Downtime Risk Scoring Method
-Downtime risk scoring creates a 0-100 machine risk score using:
-- anomaly count signals
-- vibration risk
-- temperature risk
-- cycle time drift risk
-- previous downtime indicators
-- maintenance recency factors
-
-Risk bands:
-- Low
-- Medium
-- High
-- Critical
-
-These outputs are intended for decision support and maintenance prioritization, not autonomous maintenance actions.
-
-## API Endpoints
-- `GET /health`
-- `GET /kpis/overview`
-- `GET /machines/health`
-- `GET /machines/high-risk`
-- `GET /quality/defect-trends`
-- `GET /anomalies/recent`
-- `GET /maintenance/priority`
-- `POST /predict/defect-risk`
-
-## Metabase Dashboard Setup
-Verified local setup flow:
-1. Start PostgreSQL:
-   ```bash
-   docker compose up -d postgres
-   ```
-2. Load data into PostgreSQL:
-   ```bash
-   python -m src.load_to_postgres
-   ```
-3. Run dbt from `dbt_mfg`:
-   ```bash
-   cd dbt_mfg
-   dbt debug --profiles-dir .
-   dbt run --profiles-dir . --no-partial-parse
-   dbt test --profiles-dir .
-   cd ..
-   ```
-4. Start Metabase:
-   ```bash
-   docker compose up -d metabase
-   ```
-5. Open [http://127.0.0.1:3000](http://127.0.0.1:3000)
-6. Connect PostgreSQL in Metabase using:
-   - host: `postgres`
-   - port: `5432`
-   - database: `manufacturing`
-7. Use `metabase/dashboard_queries.sql` to create cards and assemble the dashboard.
-
-See also:
-- `metabase/dashboard_queries.sql`
-- `metabase/dashboard_setup.md`
-
-## Windows PowerShell Quickstart
-From the project root:
-
-### Local Demo Pipeline
+## Quickstart - Local Python Pipeline
+### Windows PowerShell
 ```powershell
-python -m pip install -r requirements.txt
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
 .\scripts\run_demo.ps1
 ```
 
-### PostgreSQL + dbt + Metabase Workflow
+### Manual Fallback
 ```powershell
+python -m src.generate_synthetic_data
+python -m src.data_quality_checks
+python -m src.train_defect_model
+python -m src.detect_anomalies
+python -m src.downtime_risk_scoring
+python -m src.smoke_test
+pytest tests -q
+```
+
+## Full Stack Setup - PostgreSQL, dbt, Metabase
+```powershell
+copy .env.example .env
 docker compose up -d postgres
+$env:PYTHONPATH = "$PWD\src;$PWD"
 python -m src.load_to_postgres
-Push-Location .\dbt_mfg
+cd dbt_mfg
 dbt debug --profiles-dir .
 dbt run --profiles-dir . --no-partial-parse
 dbt test --profiles-dir .
-Pop-Location
+cd ..
 docker compose up -d metabase
 ```
 
-### Run FastAPI Locally
+Then:
+- open [http://127.0.0.1:3000](http://127.0.0.1:3000)
+- connect PostgreSQL using host `postgres`, port `5432`, database `manufacturing`
+- use `metabase/dashboard_queries.sql` to create dashboard cards
+
+## FastAPI Usage
 ```powershell
-.\scripts\run_api.ps1
+$env:PYTHONPATH = "$PWD\src;$PWD"
+uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### Capture Screenshots
-```powershell
-python -m playwright install chromium
-.\scripts\capture_screenshots.ps1
+Then open [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).
+
+Available endpoints:
+- `/health`
+- `/kpis/overview`
+- `/machines/health`
+- `/machines/high-risk`
+- `/quality/defect-trends`
+- `/anomalies/recent`
+- `/maintenance/priority`
+- `/predict/defect-risk`
+
+## Repository Structure
+```text
+data/
+src/
+api/
+dbt_mfg/
+metabase/
+reports/
+assets/
+tests/
+.github/workflows/
+docker-compose.yml
+README.md
 ```
 
-### Verify Outputs and Tests
-```powershell
-.\scripts\verify_outputs.ps1
-python -m src.smoke_test
-python -m pytest tests -q
-```
-
-## Makefile Commands
-- `make setup`
-- `make up`
-- `make down`
-- `make generate-data`
-- `make load-db`
-- `make dbt-run`
-- `make train`
-- `make anomalies`
-- `make risk`
-- `make api`
-- `make test`
-- `make all`
+## Important Reports
+- `reports/model_evaluation.md`
+- `reports/model_card.md`
+- `reports/responsible_ai_notes.md`
+- `reports/business_impact_summary.md`
+- `reports/architecture.md`
+- `PROJECT_STATUS.md`
+- `RESUME_BULLETS.md`
 
 ## Supported Resume Claims
-The following claims are supported by the current verified local state:
-- Built a production-oriented manufacturing analytics prototype using Python, PostgreSQL, dbt, FastAPI, and Metabase.
-- Developed end-to-end pipelines for synthetic manufacturing data generation, preprocessing, model training, anomaly detection, downtime risk scoring, and maintenance prioritization.
-- Created analytics-ready dbt marts for machine health, quality risk, OEE-style reporting, and maintenance priority.
-- Validated the local workflow with smoke tests, `pytest`, PostgreSQL loading, dbt run/test success, and dashboard/API screenshots.
-- Produced dashboard and API artifacts for human-in-the-loop operational decision support on synthetic manufacturing data.
+- Built a production-oriented manufacturing analytics platform prototype using Python, PostgreSQL, dbt, FastAPI, and Metabase.
+- Developed ML pipelines for quality defect prediction and equipment anomaly detection using feature engineering, validation metrics, and explainability artifacts.
+- Designed downtime risk scoring and maintenance priority logic to support human-in-the-loop operational decision-making.
+- Built dashboard-ready analytics marts for machine health, quality risk, OEE-style KPIs, and maintenance prioritization.
+- Documented limitations, model assumptions, and responsible AI considerations for synthetic-data decision support.
 
-Claims to avoid:
-- Do not say the project used real plant or GM production data.
-- Do not say the project was deployed in a live factory.
-- Do not claim real downtime reduction or business impact.
-- Do not describe the risk scoring as production-calibrated on real plant outcomes.
-
-## Project Limitations
-- Synthetic manufacturing data only
-- Production-oriented prototype, not a real plant deployment
-- Risk scoring is decision support logic and would require calibration on real operational data
-- API currently serves local artifacts and prototype analytics views rather than a hardened production backend
+## Limitations
+- Uses synthetic manufacturing data
+- Not connected to real machines, SCADA systems, MES platforms, or plant systems
+- Not deployed in production
+- Risk scoring needs calibration on real plant data before operational use
+- Predictions are decision support outputs, not automated maintenance instructions
 
 ## Future Improvements
-- Add calibration analysis and drift monitoring
-- Add richer experiment tracking and artifact lineage
-- Add plant-specific business rules for downtime thresholds
-- Add database-backed API queries and pagination
-- Add richer dashboard drill-downs by line, shift, and product type
+- Integrate real sensor, SCADA, or MES data sources
+- Add streaming ingestion for near-real-time monitoring
+- Add model monitoring and drift detection
+- Add richer root-cause analysis workflows
+- Add role-based dashboard access
+- Add cloud deployment options
+- Integrate with alerting or work-order systems

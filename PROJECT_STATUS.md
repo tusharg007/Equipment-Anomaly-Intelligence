@@ -1,20 +1,20 @@
 # Project Status
 
 ## Overall State
-The project is in a verified, runnable local prototype state for synthetic manufacturing analytics. The Python pipeline, PostgreSQL loading, dbt transformations/tests, FastAPI endpoints, Metabase dashboard workflow, and screenshot generation have all been exercised locally.
+The project is in a verified, runnable local prototype state for synthetic manufacturing analytics. The Python pipeline, PostgreSQL loading, dbt transformations and tests, FastAPI endpoints, Metabase dashboard workflow, screenshot generation, and lightweight CI configuration have all been validated or documented against the current repository state.
 
 ## Verified Components
-- Synthetic manufacturing data generation for machines, batches, sensors, quality checks, downtime events, and maintenance logs
+- Synthetic manufacturing data generation for machines, production batches, sensor readings, quality checks, downtime events, and maintenance logs
 - Processed ML training dataset generation in `data/processed/ml_training_dataset.csv`
-- Defect prediction training with Logistic Regression, RandomForest, and optional XGBoost fallback support
-- Isolation Forest plus rule-based anomaly detection outputs
+- Defect prediction training with Logistic Regression, RandomForest, and optional XGBoost-style support
+- Equipment anomaly detection using Isolation Forest and rule-based checks
 - Downtime risk scoring and maintenance priority outputs
 - Local Python demo pipeline execution
 - Smoke test execution
 - `pytest` execution
 - Docker PostgreSQL container startup
 - PostgreSQL data loading through `python -m src.load_to_postgres`
-- dbt validation:
+- dbt verification:
   - `dbt debug` passed
   - `dbt run` passed with `PASS=14 WARN=0 ERROR=0`
   - `dbt test` passed with `PASS=31 WARN=0 ERROR=0`
@@ -24,6 +24,7 @@ The project is in a verified, runnable local prototype state for synthetic manuf
   - `mart_oee_dashboard`
   - `mart_maintenance_priority`
 - FastAPI docs capture saved at `assets/api_docs.png`
+- Dashboard-style screenshot assets saved under `assets/`
 - Metabase running locally at `http://127.0.0.1:3000`
 - Metabase connected to PostgreSQL using host `postgres`, port `5432`, database `manufacturing`
 - Metabase dashboard created successfully
@@ -32,13 +33,14 @@ The project is in a verified, runnable local prototype state for synthetic manuf
   - `assets/metabase_dashboard_bottom.png`
 
 ## What The Project Demonstrates
-- AI/ML experimentation for manufacturing quality prediction
-- Feature engineering and preprocessing on synthetic industrial-style data
-- Unsupervised anomaly detection for equipment monitoring
-- Heuristic downtime risk scoring and maintenance prioritization
+- Manufacturing analytics and plant-style data modeling
+- Data preprocessing, validation, and feature engineering on synthetic operational data
+- AI/ML experimentation for quality prediction
+- Equipment anomaly detection for machine monitoring
+- Downtime risk scoring and maintenance prioritization for human-in-the-loop decision support
 - Analytics engineering with PostgreSQL and dbt
 - API and dashboard delivery for local stakeholder-style review
-- Reproducibility through scripts, tests, lightweight GitHub Actions Python CI checks, and local verification steps
+- Engineering discipline through scripts, tests, CI, and documentation artifacts
 
 ## CI Scope
 - GitHub Actions CI is intentionally lightweight and focuses on Python dependency installation, compile checks, the smoke test, and `pytest` on Python 3.11.
@@ -47,7 +49,7 @@ The project is in a verified, runnable local prototype state for synthetic manuf
 ## Honest Limitations
 - All manufacturing data is synthetic
 - This is a production-oriented prototype, not a real plant deployment
-- No claim should be made that the system was used in a live GM or factory environment
+- No claim should be made that the system was used in a live manufacturing environment
 - Downtime risk scoring is decision support logic and requires calibration against real plant history before operational use
 - Dashboard and API flows are locally verified prototype workflows, not a production hosting setup
 

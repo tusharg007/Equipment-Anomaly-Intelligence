@@ -5,19 +5,28 @@ From the project root:
 
 ### Local Demo Pipeline
 ```powershell
-python -m pip install -r requirements.txt
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
 .\scripts\run_demo.ps1
 ```
 
-### Smoke Test And Pytest Verification
+### Manual Pipeline Fallback
 ```powershell
+python -m src.generate_synthetic_data
+python -m src.data_quality_checks
+python -m src.train_defect_model
+python -m src.detect_anomalies
+python -m src.downtime_risk_scoring
 python -m src.smoke_test
-python -m pytest tests -q
+pytest tests -q
 ```
 
 ### PostgreSQL And dbt Verification
 ```powershell
+copy .env.example .env
 docker compose up -d postgres
+$env:PYTHONPATH = "$PWD\src;$PWD"
 python -m src.load_to_postgres
 Push-Location .\dbt_mfg
 dbt debug --profiles-dir .
@@ -28,7 +37,8 @@ Pop-Location
 
 ### Run FastAPI Locally
 ```powershell
-.\scripts\run_api.ps1
+$env:PYTHONPATH = "$PWD\src;$PWD"
+uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 FastAPI docs will be available at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).
@@ -56,4 +66,4 @@ python -m playwright install chromium
 - `run_demo.ps1` runs the local non-Docker pipeline and test flow.
 - `run_full_stack.ps1` starts Docker services, loads PostgreSQL tables, runs dbt, and prints the FastAPI and Metabase URLs.
 - `capture_screenshots.ps1` creates dashboard-style screenshots from pipeline outputs and captures FastAPI docs when the API is already running.
-- Do not commit local runtime or secret files such as `.env`, `.venv/`, `dbt_mfg/profiles.yml`, `dbt_mfg/logs/`, `dbt_mfg/target/`, `dbt_mfg/.user.yml`, or `.pytest_cache/`.
+- Keep local runtime and secret files out of version control, including `.env`, `.venv/`, `dbt_mfg/profiles.yml`, `dbt_mfg/logs/`, `dbt_mfg/target/`, `dbt_mfg/.user.yml`, and `.pytest_cache/`.
