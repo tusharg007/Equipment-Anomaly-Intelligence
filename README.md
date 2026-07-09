@@ -31,7 +31,7 @@ The result is a recruiter-friendly and technically reviewable project that shows
 - Responsible AI and model documentation including a model card and limitations notes
 - pytest coverage, smoke tests, PowerShell helpers, Docker Compose setup, and GitHub Actions CI
 
-## Recruiter / Interviewer Quick Scan
+## Quick Scan
 | What this project demonstrates | Evidence in repo |
 |---|---|
 | Manufacturing analytics and plant-style data modeling | `src/generate_synthetic_data.py`, `dbt_mfg/models/`, `data/sample/` |
