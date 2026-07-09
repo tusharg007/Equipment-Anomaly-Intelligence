@@ -159,12 +159,6 @@ The dataset is synthetic, so the project demonstrates workflow design rather tha
 - The project is a local prototype, not a production deployment
 - OEE is simplified and should be refined with plant-specific definitions and business rules
 
-## Resume Bullets
-- Built a manufacturing analytics prototype using Python, PostgreSQL, dbt, and Metabase to simulate quality prediction, equipment anomaly detection, downtime risk scoring, and operational dashboarding
-- Generated and preprocessed realistic synthetic manufacturing datasets, then engineered machine and batch features for quality modeling, anomaly analysis, and maintenance prioritization
-- Trained and validated Logistic Regression and RandomForest defect prediction models, with optional XGBoost support, and documented ROC-AUC, precision, recall, F1, and confusion matrix results
-- Developed a local analytics workflow with SQL marts, automated scripts, and dashboard queries to support machine health monitoring, OEE-style reporting, and cross-functional operations review
-
 ## Key Outputs
 - Model evaluation: `reports/model_evaluation.md`
 - Model card: `reports/model_card.md`
