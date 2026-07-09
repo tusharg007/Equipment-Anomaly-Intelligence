@@ -38,7 +38,11 @@ The project is in a verified, runnable local prototype state for synthetic manuf
 - Heuristic downtime risk scoring and maintenance prioritization
 - Analytics engineering with PostgreSQL and dbt
 - API and dashboard delivery for local stakeholder-style review
-- Reproducibility through scripts, tests, and local verification steps
+- Reproducibility through scripts, tests, lightweight GitHub Actions Python CI checks, and local verification steps
+
+## CI Scope
+- GitHub Actions CI is intentionally lightweight and focuses on Python dependency installation, compile checks, the smoke test, and `pytest` on Python 3.11.
+- PostgreSQL loading, dbt validation, FastAPI screenshots, and Metabase dashboard verification are still verified locally rather than inside CI.
 
 ## Honest Limitations
 - All manufacturing data is synthetic
