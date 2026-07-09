@@ -15,7 +15,7 @@ Manufacturing and operations teams care about defects, downtime, equipment insta
 
 This repository demonstrates that workflow as a production-oriented prototype built on synthetic manufacturing data. It moves from raw CSV generation to PostgreSQL loading, dbt transformation layers, machine learning outputs, FastAPI endpoints, and dashboard-ready assets, while keeping the documentation honest about model limitations and synthetic-data constraints.
 
-The result is a recruiter-friendly and technically reviewable project that shows how manufacturing analytics, AI/ML, dashboarding, testing, and engineering discipline can fit together in a realistic local prototype.
+The result is a technically reviewable project that shows how manufacturing analytics, AI/ML, dashboarding, testing, and engineering discipline can fit together in a realistic local prototype.
 
 ## Key Features
 - Synthetic manufacturing data generation with correlated operational signals across quality, downtime, and maintenance events
