@@ -1,0 +1,31 @@
+machine_id,line_id,risk_band,maintenance_priority_recommendation,top_risk_driver
+M006,L3,Critical,Urgent maintenance review,Temperature
+M009,L3,High,Preventive maintenance,Cycle time drift
+M023,L2,High,Preventive maintenance,Cycle time drift
+M004,L1,Medium,Schedule inspection,Vibration
+M026,L2,Medium,Schedule inspection,Cycle time drift
+M017,L2,Medium,Schedule inspection,Vibration
+M012,L3,Medium,Schedule inspection,Vibration
+M007,L1,Medium,Schedule inspection,Cycle time drift
+M019,L1,Medium,Schedule inspection,Cycle time drift
+M021,L3,Medium,Schedule inspection,Vibration
+M011,L2,Medium,Schedule inspection,Vibration
+M027,L3,Medium,Schedule inspection,Vibration
+M025,L1,Medium,Schedule inspection,Vibration
+M022,L1,Medium,Schedule inspection,Cycle time drift
+M020,L2,Medium,Schedule inspection,Vibration
+M008,L2,Medium,Schedule inspection,Cycle time drift
+M029,L2,Medium,Schedule inspection,Cycle time drift
+M016,L1,Medium,Schedule inspection,Vibration
+M014,L2,Medium,Schedule inspection,Cycle time drift
+M015,L3,Medium,Schedule inspection,Cycle time drift
+M030,L3,Medium,Schedule inspection,Vibration
+M010,L1,Medium,Schedule inspection,Cycle time drift
+M002,L2,Medium,Schedule inspection,Vibration
+M013,L1,Medium,Schedule inspection,Cycle time drift
+M003,L3,Medium,Schedule inspection,Cycle time drift
+M005,L2,Low,Monitor,Cycle time drift
+M024,L3,Low,Monitor,Cycle time drift
+M001,L1,Low,Monitor,Cycle time drift
+M028,L1,Low,Monitor,Cycle time drift
+M018,L3,Low,Monitor,Vibration

@@ -1,0 +1,14 @@
+version: 2
+
+sources:
+  - name: ops_raw
+    schema: public
+    tables:
+      - name: machines
+      - name: production_batches
+      - name: sensor_readings
+      - name: quality_checks
+      - name: downtime_events
+      - name: maintenance_logs
+      - name: ml_training_dataset
+      - name: model_features

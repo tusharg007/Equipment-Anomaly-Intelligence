@@ -10,6 +10,9 @@ setup:
 up:
 	docker compose up -d
 
+down:
+	docker compose down
+
 generate-data:
 	$(PYTHON) src/generate_synthetic_data.py
 
@@ -27,6 +30,12 @@ anomalies:
 
 risk:
 	$(PYTHON) src/downtime_risk_scoring.py
+
+api:
+	$(PYTHON) -m uvicorn api.main:app --host 0.0.0.0 --port 8000
+
+test:
+	$(PYTHON) -m pytest tests -q
 
 smoke-test:
 	$(PYTHON) src/smoke_test.py

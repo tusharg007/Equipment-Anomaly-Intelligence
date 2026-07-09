@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: mart_machine_health
+    columns:
+      - name: machine_id
+        tests: [not_null, unique]
+  - name: mart_quality_risk
+    columns:
+      - name: batch_id
+        tests: [not_null]
+      - name: quality_risk_band
+        tests:
+          - accepted_values:
+              values: ['Low', 'Medium', 'High']
+  - name: mart_oee_dashboard
+    columns:
+      - name: line_id
+        tests: [not_null]
+      - name: metric_day
+        tests: [not_null]
+  - name: mart_maintenance_priority
+    columns:
+      - name: maintenance_risk_band
+        tests:
+          - accepted_values:
+              values: ['Low', 'Medium', 'High', 'Critical']

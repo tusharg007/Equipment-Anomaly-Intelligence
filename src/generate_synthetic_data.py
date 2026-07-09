@@ -5,7 +5,8 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-from utils import PROCESSED_DATA_DIR, RAW_DATA_DIR, ensure_directories, safe_divide
+from config import settings
+from utils import ensure_directories, safe_divide
 
 
 SEED = 42
@@ -16,9 +17,10 @@ START_DATE = pd.Timestamp("2026-01-01 00:00:00")
 PRODUCT_TYPES = ["SUV Frame", "Battery Module", "Steering Column"]
 DEFECT_TYPES = ["Surface", "Dimensional", "Assembly", "Electrical"]
 OPERATOR_TEAMS = ["Team A", "Team B", "Team C", "Team D"]
+MACHINE_TYPES = ["Weld", "Paint", "Assembly", "Inspection"]
 
 
-@dataclass
+@dataclass(frozen=True)
 class ShiftConfig:
     name: str
     vibration_bias: float
@@ -27,9 +29,9 @@ class ShiftConfig:
 
 
 SHIFT_CONFIGS = {
-    0: ShiftConfig("Night", 0.14, 1.8, 1.18),
-    1: ShiftConfig("Day", 0.00, 0.0, 1.00),
-    2: ShiftConfig("Evening", 0.08, 0.9, 1.08),
+    "Night": ShiftConfig("Night", 0.16, 1.9, 1.20),
+    "Day": ShiftConfig("Day", 0.00, 0.0, 1.00),
+    "Evening": ShiftConfig("Evening", 0.08, 0.8, 1.10),
 }
 
 
@@ -39,96 +41,141 @@ def sigmoid(values: np.ndarray) -> np.ndarray:
 
 def assign_shift(hour: int) -> str:
     if 0 <= hour < 8:
-        return SHIFT_CONFIGS[0].name
+        return "Night"
     if 8 <= hour < 16:
-        return SHIFT_CONFIGS[1].name
-    return SHIFT_CONFIGS[2].name
+        return "Day"
+    return "Evening"
 
 
 def build_machines(rng: np.random.Generator) -> pd.DataFrame:
-    machine_ids = [f"M{idx:03d}" for idx in range(1, NUM_MACHINES + 1)]
-    line_ids = [f"L{((idx - 1) % NUM_LINES) + 1}" for idx in range(1, NUM_MACHINES + 1)]
-    machine_age = rng.integers(2, 16, size=NUM_MACHINES)
-    last_maintenance_gap = rng.integers(3, 35, size=NUM_MACHINES)
-    maintenance_status = np.where(last_maintenance_gap <= 10, "recent", np.where(last_maintenance_gap <= 20, "scheduled", "overdue"))
+    machine_rows = []
+    for idx in range(1, NUM_MACHINES + 1):
+        machine_age = int(rng.integers(2, 16))
+        machine_type = MACHINE_TYPES[(idx - 1) % len(MACHINE_TYPES)]
+        baseline_health = round(float(np.clip(0.9 - 0.03 * machine_age + rng.normal(0, 0.04), 0.35, 0.96)), 3)
+        line_id = f"L{((idx - 1) % NUM_LINES) + 1}"
+        machine_rows.append(
+            {
+                "machine_id": f"M{idx:03d}",
+                "line_id": line_id,
+                "machine_type": machine_type,
+                "machine_age_years": machine_age,
+                "installation_year": 2026 - machine_age,
+                "baseline_health_score": baseline_health,
+                "baseline_cycle_time_seconds": round(float(rng.normal(57, 4.5)), 2),
+                "baseline_temperature": round(float(rng.normal(73, 3.8)), 2),
+                "baseline_vibration": round(float(rng.normal(2.1, 0.35)), 3),
+                "baseline_pressure": round(float(rng.normal(99, 4.5)), 2),
+            }
+        )
+    return pd.DataFrame(machine_rows)
 
-    machines = pd.DataFrame(
-        {
-            "machine_id": machine_ids,
-            "line_id": line_ids,
-            "machine_age_years": machine_age,
-            "machine_type": rng.choice(["Weld", "Paint", "Assembly", "Inspection"], size=NUM_MACHINES),
-            "installation_year": 2026 - machine_age,
-            "baseline_cycle_time_seconds": np.round(rng.normal(57, 5, size=NUM_MACHINES), 2),
-            "baseline_temperature": np.round(rng.normal(73, 4, size=NUM_MACHINES), 2),
-            "baseline_vibration": np.round(rng.normal(2.2, 0.4, size=NUM_MACHINES), 3),
-            "baseline_pressure": np.round(rng.normal(99, 5, size=NUM_MACHINES), 2),
-            "last_maintenance_days_ago": last_maintenance_gap,
-            "maintenance_status": maintenance_status,
-        }
-    )
-    return machines
 
-
-def build_sensor_readings(machines: pd.DataFrame, rng: np.random.Generator) -> pd.DataFrame:
-    timestamps = pd.date_range(START_DATE, periods=NUM_DAYS * 24, freq="h")
-    records = []
-
+def build_maintenance_logs(machines: pd.DataFrame, rng: np.random.Generator) -> pd.DataFrame:
+    maintenance_rows = []
     for machine in machines.itertuples(index=False):
-        age_factor = machine.machine_age_years / 12
-        maintenance_relief = max(0, (18 - machine.last_maintenance_days_ago) / 18)
+        num_events = int(rng.integers(2, 5))
+        candidate_days = sorted(rng.choice(np.arange(2, NUM_DAYS - 1), size=num_events, replace=False).tolist())
+        for i, offset_day in enumerate(candidate_days):
+            event_ts = START_DATE + pd.Timedelta(days=int(offset_day), hours=int(rng.integers(6, 19)))
+            maintenance_type = "Preventive" if i < num_events - 1 else rng.choice(["Preventive", "Corrective"], p=[0.6, 0.4])
+            downtime_minutes = int(max(20, rng.normal(48 if maintenance_type == "Preventive" else 78, 14)))
+            maintenance_rows.append(
+                {
+                    "maintenance_id": f"MT_{machine.machine_id}_{offset_day}",
+                    "machine_id": machine.machine_id,
+                    "line_id": machine.line_id,
+                    "timestamp": event_ts,
+                    "maintenance_type": maintenance_type,
+                    "technician_team": rng.choice(["Mech-1", "Mech-2", "Elec-1"]),
+                    "parts_replaced": rng.choice(["Bearing", "Seal", "Valve", "Sensor", "Filter"]),
+                    "downtime_minutes": downtime_minutes,
+                    "maintenance_status_after": "recent",
+                }
+            )
+    maintenance_logs = pd.DataFrame(maintenance_rows).sort_values(["machine_id", "timestamp"]).reset_index(drop=True)
+    return maintenance_logs
+
+
+def build_sensor_readings(
+    machines: pd.DataFrame,
+    maintenance_logs: pd.DataFrame,
+    rng: np.random.Generator,
+) -> pd.DataFrame:
+    timestamps = pd.date_range(START_DATE, periods=NUM_DAYS * 24, freq="h")
+    maintenance_lookup = {
+        machine_id: list(group["timestamp"])
+        for machine_id, group in maintenance_logs.groupby("machine_id")
+    }
+    records: list[dict] = []
+
+    # The synthetic logic intentionally links older machines and prolonged time since maintenance
+    # to noisier sensors, more anomalies, and slower cycle times.
+    for machine in machines.itertuples(index=False):
+        maintenance_events = maintenance_lookup.get(machine.machine_id, [])
+        next_event_idx = 0
+        last_maintenance_ts = START_DATE - pd.Timedelta(days=int(machine.machine_age_years))
 
         for timestamp in timestamps:
+            while next_event_idx < len(maintenance_events) and maintenance_events[next_event_idx] <= timestamp:
+                last_maintenance_ts = maintenance_events[next_event_idx]
+                next_event_idx += 1
+
             shift_name = assign_shift(timestamp.hour)
-            shift_cfg = next(config for config in SHIFT_CONFIGS.values() if config.name == shift_name)
-            day_index = (timestamp - timestamps[0]).days
-            drift = 0.01 * day_index + 0.04 * age_factor
+            shift_cfg = SHIFT_CONFIGS[shift_name]
+            age_factor = machine.machine_age_years / 15
+            days_since_maintenance = max((timestamp - last_maintenance_ts).days, 0)
+            maintenance_relief = np.clip((10 - days_since_maintenance) / 10, 0, 1)
             seasonal = np.sin(timestamp.hour / 24 * 2 * np.pi)
-            line_load = 1 + (int(machine.line_id[-1]) - 2) * 0.03
+            cycle_drift = 0.015 * ((timestamp - timestamps[0]).days) + 0.06 * age_factor
+            baseline_health_penalty = 1 - machine.baseline_health_score
 
             temperature = (
                 machine.baseline_temperature
-                + 1.6 * seasonal
-                + 4.0 * age_factor
+                + 1.8 * seasonal
+                + 4.6 * age_factor
+                + 2.2 * baseline_health_penalty
                 + shift_cfg.temperature_bias
-                + rng.normal(0, 1.3 * shift_cfg.variance_multiplier)
-                - 1.2 * maintenance_relief
+                + rng.normal(0, 1.15 * shift_cfg.variance_multiplier)
+                - 1.5 * maintenance_relief
             )
             vibration = (
                 machine.baseline_vibration
-                + 0.14 * day_index / 7
-                + 0.45 * age_factor
+                + 0.52 * age_factor
+                + 0.18 * cycle_drift * 10
+                + 0.24 * baseline_health_penalty
                 + shift_cfg.vibration_bias
-                + rng.normal(0, 0.18 * shift_cfg.variance_multiplier)
-                - 0.08 * maintenance_relief
+                + rng.normal(0, 0.16 * shift_cfg.variance_multiplier)
+                - 0.12 * maintenance_relief
             )
             pressure = (
                 machine.baseline_pressure
-                + 2.4 * seasonal
-                - 2.0 * drift
-                + rng.normal(0, 1.7 * shift_cfg.variance_multiplier)
+                + 2.3 * seasonal
+                - 1.9 * cycle_drift
+                + rng.normal(0, 1.55 * shift_cfg.variance_multiplier)
             )
             cycle_time = (
                 machine.baseline_cycle_time_seconds
-                * line_load
-                * (1 + drift / 9)
-                + rng.normal(0, 1.9 * shift_cfg.variance_multiplier)
-                - 0.9 * maintenance_relief
+                * (1 + cycle_drift / 10)
+                + 4.5 * baseline_health_penalty
+                + rng.normal(0, 1.7 * shift_cfg.variance_multiplier)
+                - 1.0 * maintenance_relief
             )
             pressure_instability = abs(pressure - machine.baseline_pressure)
-            anomaly_signal = (
-                0.18 * max(temperature - 80, 0)
-                + 0.9 * max(vibration - 2.8, 0)
-                + 0.12 * pressure_instability
-                + 0.08 * max(cycle_time - machine.baseline_cycle_time_seconds - 5, 0)
-                + 0.45 * age_factor
-            )
             energy_consumption = (
-                108
-                + 0.65 * cycle_time
-                + 2.8 * vibration
-                + 0.22 * temperature
-                + rng.normal(0, 2.5)
+                110
+                + 0.72 * cycle_time
+                + 2.9 * vibration
+                + 0.18 * temperature
+                + rng.normal(0, 2.2)
+            )
+            anomaly_signal = (
+                0.22 * max(temperature - 80, 0)
+                + 1.0 * max(vibration - 2.8, 0)
+                + 0.10 * pressure_instability
+                + 0.09 * max(cycle_time - machine.baseline_cycle_time_seconds - 5, 0)
+                + 0.42 * age_factor
+                + 0.16 * max(days_since_maintenance - 12, 0) / 12
             )
 
             records.append(
@@ -143,8 +190,10 @@ def build_sensor_readings(machines: pd.DataFrame, rng: np.random.Generator) -> p
                     "cycle_time": round(float(cycle_time), 2),
                     "energy_consumption": round(float(energy_consumption), 2),
                     "machine_age_years": machine.machine_age_years,
-                    "maintenance_status": machine.maintenance_status,
-                    "last_maintenance_days_ago": machine.last_maintenance_days_ago,
+                    "machine_type": machine.machine_type,
+                    "baseline_health_score": machine.baseline_health_score,
+                    "days_since_maintenance": days_since_maintenance,
+                    "maintenance_status": "recent" if days_since_maintenance <= 7 else "scheduled" if days_since_maintenance <= 21 else "overdue",
                     "pressure_instability": round(float(pressure_instability), 2),
                     "sensor_anomaly_signal": round(float(anomaly_signal), 3),
                 }
@@ -153,208 +202,200 @@ def build_sensor_readings(machines: pd.DataFrame, rng: np.random.Generator) -> p
     return pd.DataFrame(records)
 
 
-def build_batches(sensor_readings: pd.DataFrame, rng: np.random.Generator) -> pd.DataFrame:
-    batched = sensor_readings.copy()
-    batched["batch_slot"] = batched["timestamp"].dt.floor("4h")
+def build_production_batches(sensor_readings: pd.DataFrame, rng: np.random.Generator) -> pd.DataFrame:
+    sensor_batches = sensor_readings.copy()
+    sensor_batches["batch_slot"] = sensor_batches["timestamp"].dt.floor("4h")
+    grouped = sensor_batches.groupby(["line_id", "batch_slot", "shift"], as_index=False).agg(
+        avg_temperature=("temperature", "mean"),
+        avg_vibration=("vibration", "mean"),
+        avg_pressure=("pressure", "mean"),
+        avg_cycle_time=("cycle_time", "mean"),
+        avg_energy_consumption=("energy_consumption", "mean"),
+        avg_pressure_instability=("pressure_instability", "mean"),
+        avg_anomaly_signal=("sensor_anomaly_signal", "mean"),
+    )
 
     batch_rows = []
-    for row in (
-        batched.groupby(["line_id", "batch_slot", "shift"], as_index=False)
-        .agg(
-            avg_temperature=("temperature", "mean"),
-            avg_vibration=("vibration", "mean"),
-            avg_pressure=("pressure", "mean"),
-            avg_cycle_time=("cycle_time", "mean"),
-            avg_energy=("energy_consumption", "mean"),
-            sensor_anomaly_signal=("sensor_anomaly_signal", "mean"),
-        )
-        .itertuples(index=False)
-    ):
+    for row in grouped.itertuples(index=False):
         batch_id = f"B{row.batch_slot.strftime('%Y%m%d%H')}_{row.line_id}"
-        product_type = PRODUCT_TYPES[(int(row.line_id[-1]) - 1 + row.batch_slot.day) % len(PRODUCT_TYPES)]
-        material_batch = f"MAT-{row.batch_slot.strftime('%m%d')}-{row.line_id}"
-        operator_team = OPERATOR_TEAMS[(row.batch_slot.hour // 4 + int(row.line_id[-1])) % len(OPERATOR_TEAMS)]
-        planned_units = int(rng.integers(180, 240))
-        cycle_penalty = max(row.avg_cycle_time - 58, 0) * 0.7
-        actual_units = int(max(planned_units - cycle_penalty - row.sensor_anomaly_signal * 4 + rng.normal(0, 5), 90))
-        good_units = int(actual_units - max(row.sensor_anomaly_signal * 2 + rng.normal(6, 3), 0))
-
+        planned_units = int(rng.integers(175, 245))
+        actual_units = int(max(planned_units - row.avg_anomaly_signal * 4 - max(row.avg_cycle_time - 58, 0), 90))
+        good_units = int(max(actual_units - max(row.avg_anomaly_signal * 2 + rng.normal(5, 2), 0), 0))
         batch_rows.append(
             {
                 "batch_id": batch_id,
                 "line_id": row.line_id,
                 "timestamp": row.batch_slot,
                 "shift": row.shift,
-                "product_type": product_type,
-                "material_batch": material_batch,
-                "operator_team": operator_team,
+                "product_type": PRODUCT_TYPES[(int(row.line_id[-1]) + row.batch_slot.day) % len(PRODUCT_TYPES)],
+                "material_batch": f"MAT-{row.batch_slot.strftime('%m%d')}-{row.line_id}",
+                "operator_team": OPERATOR_TEAMS[(row.batch_slot.hour // 4 + int(row.line_id[-1])) % len(OPERATOR_TEAMS)],
                 "planned_units": planned_units,
                 "actual_units": actual_units,
-                "good_units": max(min(good_units, actual_units), 0),
+                "good_units": min(good_units, actual_units),
                 "avg_temperature": round(float(row.avg_temperature), 2),
                 "avg_vibration": round(float(row.avg_vibration), 3),
                 "avg_pressure": round(float(row.avg_pressure), 2),
                 "avg_cycle_time": round(float(row.avg_cycle_time), 2),
-                "avg_energy_consumption": round(float(row.avg_energy), 2),
+                "avg_energy_consumption": round(float(row.avg_energy_consumption), 2),
+                "avg_pressure_instability": round(float(row.avg_pressure_instability), 2),
+                "avg_anomaly_signal": round(float(row.avg_anomaly_signal), 3),
             }
         )
-
     return pd.DataFrame(batch_rows)
 
 
 def build_quality_checks(
-    production_batches: pd.DataFrame,
     machines: pd.DataFrame,
+    production_batches: pd.DataFrame,
     sensor_readings: pd.DataFrame,
     rng: np.random.Generator,
 ) -> pd.DataFrame:
-    batch_machine_features = (
+    sensor_features = (
         sensor_readings.assign(batch_slot=sensor_readings["timestamp"].dt.floor("4h"))
-        .groupby(["line_id", "batch_slot", "machine_id"], as_index=False)
+        .groupby(["machine_id", "line_id", "batch_slot", "shift"], as_index=False)
         .agg(
             avg_temperature=("temperature", "mean"),
             avg_vibration=("vibration", "mean"),
             avg_pressure=("pressure", "mean"),
             avg_cycle_time=("cycle_time", "mean"),
-            pressure_instability=("pressure_instability", "mean"),
-            anomaly_signal=("sensor_anomaly_signal", "mean"),
+            avg_energy_consumption=("energy_consumption", "mean"),
+            avg_pressure_instability=("pressure_instability", "mean"),
+            avg_anomaly_signal=("sensor_anomaly_signal", "mean"),
+            days_since_maintenance=("days_since_maintenance", "max"),
+            machine_age_years=("machine_age_years", "max"),
+            baseline_health_score=("baseline_health_score", "max"),
         )
     )
-    machine_age = machines[["machine_id", "machine_age_years", "last_maintenance_days_ago"]]
-    batch_machine_features = batch_machine_features.merge(machine_age, on="machine_id", how="left")
+    features = sensor_features.merge(
+        production_batches,
+        left_on=["line_id", "batch_slot", "shift"],
+        right_on=["line_id", "timestamp", "shift"],
+        how="left",
+        suffixes=("", "_batch"),
+    )
 
     quality_rows = []
-    for row in batch_machine_features.itertuples(index=False):
-        cycle_drift = row.avg_cycle_time - 58
+    for row in features.itertuples(index=False):
+        cycle_time_drift = row.avg_cycle_time - row.avg_cycle_time_batch
         logit = (
-            -4.3
-            + 0.075 * (row.avg_temperature - 76)
-            + 1.10 * (row.avg_vibration - 2.3)
-            + 0.045 * max(cycle_drift, 0)
-            + 0.05 * row.pressure_instability
-            + 0.06 * row.machine_age_years
-            + 0.18 * row.anomaly_signal
-            + (0.28 if row.batch_slot.hour < 8 else 0.0)
+            -4.1
+            + 0.08 * (row.avg_temperature - 76)
+            + 1.18 * (row.avg_vibration - 2.2)
+            + 0.06 * row.avg_pressure_instability
+            + 0.05 * max(cycle_time_drift, 0)
+            + 0.08 * row.machine_age_years / 5
+            + 0.20 * row.avg_anomaly_signal
+            + (0.22 if row.shift == "Night" else 0.0)
         )
         defect_probability = float(sigmoid(np.array([logit]))[0])
         defect_flag = int(rng.random() < defect_probability)
         if defect_flag:
-            if row.avg_vibration > 2.8:
+            if row.avg_vibration > 2.9:
                 defect_type = "Assembly"
             elif row.avg_temperature > 80:
                 defect_type = "Surface"
-            elif row.pressure_instability > 4:
+            elif row.avg_pressure_instability > 4:
                 defect_type = "Dimensional"
             else:
-                defect_type = rng.choice(DEFECT_TYPES)
+                defect_type = "Electrical"
         else:
             defect_type = "None"
 
-        defect_count = int(max(0, rng.poisson(lam=defect_probability * 6)))
         quality_rows.append(
             {
                 "quality_check_id": f"QC_{row.machine_id}_{row.batch_slot.strftime('%Y%m%d%H')}",
-                "batch_id": f"B{row.batch_slot.strftime('%Y%m%d%H')}_{row.line_id}",
+                "batch_id": row.batch_id,
                 "machine_id": row.machine_id,
                 "line_id": row.line_id,
                 "timestamp": row.batch_slot,
-                "shift": assign_shift(row.batch_slot.hour),
+                "shift": row.shift,
                 "temperature": round(float(row.avg_temperature), 2),
                 "vibration": round(float(row.avg_vibration), 3),
                 "pressure": round(float(row.avg_pressure), 2),
                 "cycle_time": round(float(row.avg_cycle_time), 2),
+                "energy_consumption": round(float(row.avg_energy_consumption), 2),
                 "machine_age_years": row.machine_age_years,
-                "maintenance_status": "recent" if row.last_maintenance_days_ago <= 10 else "scheduled" if row.last_maintenance_days_ago <= 20 else "overdue",
-                "product_type": production_batches.loc[production_batches["batch_id"] == f"B{row.batch_slot.strftime('%Y%m%d%H')}_{row.line_id}", "product_type"].iloc[0],
-                "material_batch": production_batches.loc[production_batches["batch_id"] == f"B{row.batch_slot.strftime('%Y%m%d%H')}_{row.line_id}", "material_batch"].iloc[0],
-                "operator_team": production_batches.loc[production_batches["batch_id"] == f"B{row.batch_slot.strftime('%Y%m%d%H')}_{row.line_id}", "operator_team"].iloc[0],
-                "pressure_instability": round(float(row.pressure_instability), 2),
+                "maintenance_status": "recent" if row.days_since_maintenance <= 7 else "scheduled" if row.days_since_maintenance <= 21 else "overdue",
+                "product_type": row.product_type,
+                "material_batch": row.material_batch,
+                "operator_team": row.operator_team,
+                "pressure_instability": round(float(row.avg_pressure_instability), 2),
                 "defect_probability": round(defect_probability, 4),
                 "defect_flag": defect_flag,
                 "defect_type": defect_type,
-                "defect_count": defect_count,
+                "defect_count": int(max(0, rng.poisson(lam=max(defect_probability * 5, 0.1)))),
             }
         )
     return pd.DataFrame(quality_rows)
 
 
-def build_maintenance_logs(machines: pd.DataFrame, rng: np.random.Generator) -> pd.DataFrame:
-    log_rows = []
-    for machine in machines.itertuples(index=False):
-        event_count = int(rng.integers(2, 5))
-        for offset_days in sorted(rng.choice(np.arange(1, NUM_DAYS + 20), size=event_count, replace=False)):
-            event_timestamp = START_DATE + pd.Timedelta(days=int(offset_days), hours=int(rng.integers(6, 18)))
-            maintenance_type = "Preventive" if offset_days >= machine.last_maintenance_days_ago else "Corrective"
-            log_rows.append(
-                {
-                    "maintenance_id": f"MT_{machine.machine_id}_{offset_days}",
-                    "machine_id": machine.machine_id,
-                    "line_id": machine.line_id,
-                    "timestamp": event_timestamp,
-                    "maintenance_type": maintenance_type,
-                    "technician_team": rng.choice(["Mech-1", "Mech-2", "Elec-1"]),
-                    "parts_replaced": rng.choice(["Bearing", "Seal", "Valve", "Sensor", "None"]),
-                    "downtime_minutes": int(max(20, rng.normal(75 if maintenance_type == 'Corrective' else 45, 15))),
-                    "maintenance_status_after": "recent",
-                }
-            )
-    return pd.DataFrame(log_rows).sort_values("timestamp")
-
-
 def build_downtime_events(
-    sensor_readings: pd.DataFrame,
     machines: pd.DataFrame,
+    maintenance_logs: pd.DataFrame,
+    sensor_readings: pd.DataFrame,
     rng: np.random.Generator,
 ) -> pd.DataFrame:
-    event_rows = []
-    sensor_with_keys = sensor_readings.copy()
-    sensor_with_keys["date"] = sensor_with_keys["timestamp"].dt.date
-    daily_candidates = sensor_with_keys.groupby(["machine_id", "date"], as_index=False).agg(
-        max_temperature=("temperature", "max"),
-        max_vibration=("vibration", "max"),
-        avg_cycle_time=("cycle_time", "mean"),
-        avg_anomaly_signal=("sensor_anomaly_signal", "mean"),
-        max_pressure_instability=("pressure_instability", "max"),
+    maintenance_lookup = (
+        maintenance_logs.assign(date=maintenance_logs["timestamp"].dt.floor("D"))
+        .groupby(["machine_id", "date"], as_index=False)
+        .size()
+        .rename(columns={"size": "maintenance_events"})
     )
-    machines_lookup = machines.set_index("machine_id")
+    daily_features = (
+        sensor_readings.assign(date=sensor_readings["timestamp"].dt.floor("D"))
+        .groupby(["machine_id", "line_id", "date"], as_index=False)
+        .agg(
+            max_temperature=("temperature", "max"),
+            max_vibration=("vibration", "max"),
+            avg_cycle_time=("cycle_time", "mean"),
+            avg_pressure_instability=("pressure_instability", "mean"),
+            avg_anomaly_signal=("sensor_anomaly_signal", "mean"),
+            repeated_anomaly_hours=("sensor_anomaly_signal", lambda values: int((values > 2.6).sum())),
+            days_since_maintenance=("days_since_maintenance", "min"),
+            machine_age_years=("machine_age_years", "max"),
+        )
+        .merge(maintenance_lookup, on=["machine_id", "date"], how="left")
+    )
+    daily_features["maintenance_events"] = daily_features["maintenance_events"].fillna(0)
 
-    for row in daily_candidates.itertuples(index=False):
-        machine = machines_lookup.loc[row.machine_id]
-        maintenance_modifier = -0.07 if machine.last_maintenance_days_ago <= 10 else 0.08
+    event_rows = []
+    for row in daily_features.itertuples(index=False):
+        maintenance_relief = 0.18 if row.days_since_maintenance <= 5 or row.maintenance_events > 0 else 0.0
         risk_logit = (
-            -3.4
-            + 0.12 * max(row.max_temperature - 81, 0)
+            -3.6
+            + 0.14 * max(row.max_temperature - 81, 0)
             + 1.05 * max(row.max_vibration - 2.9, 0)
-            + 0.10 * max(row.avg_cycle_time - machine.baseline_cycle_time_seconds - 4, 0)
-            + 0.05 * row.max_pressure_instability
-            + 0.12 * row.avg_anomaly_signal
-            + 0.05 * machine.machine_age_years
-            + maintenance_modifier
+            + 0.06 * row.avg_pressure_instability
+            + 0.11 * max(row.avg_cycle_time - 60, 0)
+            + 0.15 * row.avg_anomaly_signal
+            + 0.10 * row.repeated_anomaly_hours
+            + 0.05 * row.machine_age_years
+            - maintenance_relief
         )
         probability = float(sigmoid(np.array([risk_logit]))[0])
         if rng.random() < probability:
-            event_timestamp = pd.Timestamp(row.date) + pd.Timedelta(hours=int(rng.integers(0, 24)))
-            downtime_minutes = int(max(15, rng.normal(65 + row.avg_anomaly_signal * 10, 18)))
+            event_timestamp = row.date + pd.Timedelta(hours=int(rng.integers(0, 24)))
             event_rows.append(
                 {
-                    "downtime_event_id": f"DT_{row.machine_id}_{pd.Timestamp(row.date).strftime('%Y%m%d')}",
+                    "downtime_event_id": f"DT_{row.machine_id}_{row.date.strftime('%Y%m%d')}",
                     "machine_id": row.machine_id,
-                    "line_id": machine.line_id,
+                    "line_id": row.line_id,
                     "timestamp": event_timestamp,
                     "shift": assign_shift(event_timestamp.hour),
                     "root_cause": rng.choice(["Bearing wear", "Pressure instability", "Overheating", "Sensor drift"]),
                     "temperature": round(float(row.max_temperature), 2),
                     "vibration": round(float(row.max_vibration), 3),
                     "cycle_time": round(float(row.avg_cycle_time), 2),
-                    "pressure_instability": round(float(row.max_pressure_instability), 2),
-                    "downtime_minutes": downtime_minutes,
+                    "pressure_instability": round(float(row.avg_pressure_instability), 2),
+                    "repeated_anomaly_hours": row.repeated_anomaly_hours,
+                    "downtime_minutes": int(max(15, rng.normal(50 + row.avg_anomaly_signal * 12 + row.repeated_anomaly_hours * 4, 16))),
                 }
             )
+    return pd.DataFrame(event_rows).sort_values(["machine_id", "timestamp"]).reset_index(drop=True)
 
-    return pd.DataFrame(event_rows).sort_values("timestamp")
 
-
-def build_processed_features(
+def build_ml_training_dataset(
     sensor_readings: pd.DataFrame,
     quality_checks: pd.DataFrame,
     downtime_events: pd.DataFrame,
@@ -371,62 +412,82 @@ def build_processed_features(
             pressure_instability=("pressure_instability", "mean"),
             anomaly_signal=("sensor_anomaly_signal", "mean"),
             machine_age_years=("machine_age_years", "max"),
-            last_maintenance_days_ago=("last_maintenance_days_ago", "max"),
+            days_since_maintenance=("days_since_maintenance", "min"),
+            baseline_health_score=("baseline_health_score", "max"),
         )
         .rename(columns={"batch_slot": "timestamp"})
     )
+    sensor_features["cycle_time_drift"] = (
+        sensor_features["avg_cycle_time"] - sensor_features.groupby("machine_id")["avg_cycle_time"].transform("median")
+    )
+    sensor_features["pressure_deviation"] = (
+        sensor_features["avg_pressure"] - sensor_features.groupby("machine_id")["avg_pressure"].transform("median")
+    ).abs()
+    sensor_features["night_shift_flag"] = (sensor_features["shift"] == "Night").astype(int)
+    sensor_features["maintenance_recency_score"] = np.clip(30 - sensor_features["days_since_maintenance"], 0, 30)
+
+    downtime_daily = downtime_events.copy()
+    if downtime_daily.empty:
+        downtime_daily = pd.DataFrame(columns=["machine_id", "date", "downtime_minutes"])
+    else:
+        downtime_daily["date"] = pd.to_datetime(downtime_daily["timestamp"]).dt.date
+        downtime_daily = downtime_daily.groupby(["machine_id", "date"], as_index=False).agg(
+            previous_downtime_minutes=("downtime_minutes", "sum"),
+            downtime_event_count=("downtime_event_id", "count"),
+        )
 
     quality_agg = quality_checks.groupby(["machine_id", "timestamp"], as_index=False).agg(
         defect_flag=("defect_flag", "max"),
         defect_count=("defect_count", "sum"),
-    )
-    downtime_events = downtime_events.copy()
-    downtime_events["date"] = downtime_events["timestamp"].dt.date
-    daily_downtime = downtime_events.groupby(["machine_id", "date"], as_index=False).agg(
-        previous_downtime_minutes=("downtime_minutes", "sum")
+        defect_probability=("defect_probability", "mean"),
     )
 
-    features = sensor_features.merge(quality_agg, on=["machine_id", "timestamp"], how="left")
-    features["date"] = features["timestamp"].dt.date
-    features = features.merge(daily_downtime, on=["machine_id", "date"], how="left")
-    features["previous_downtime_minutes"] = features["previous_downtime_minutes"].fillna(0)
-    features["cycle_time_drift"] = features["avg_cycle_time"] - features.groupby("machine_id")["avg_cycle_time"].transform("median")
-    features["pressure_deviation"] = (features["avg_pressure"] - features.groupby("machine_id")["avg_pressure"].transform("median")).abs()
-    features["night_shift_flag"] = (features["shift"] == "Night").astype(int)
-    features["maintenance_recency_score"] = np.clip(30 - features["last_maintenance_days_ago"], 0, 30)
-    features["quality_risk_index"] = (
-        0.35 * np.maximum(features["avg_temperature"] - 76, 0)
-        + 6.0 * np.maximum(features["avg_vibration"] - 2.3, 0)
-        + 0.6 * np.maximum(features["cycle_time_drift"], 0)
-        + 0.5 * features["pressure_instability"]
+    dataset = sensor_features.merge(quality_agg, on=["machine_id", "timestamp"], how="left")
+    dataset["date"] = pd.to_datetime(dataset["timestamp"]).dt.date
+    dataset = dataset.merge(downtime_daily, on=["machine_id", "date"], how="left")
+    dataset["previous_downtime_minutes"] = dataset["previous_downtime_minutes"].fillna(0)
+    dataset["downtime_event_count"] = dataset["downtime_event_count"].fillna(0)
+    dataset["defect_flag"] = dataset["defect_flag"].fillna(0).astype(int)
+    dataset["defect_count"] = dataset["defect_count"].fillna(0).astype(int)
+    dataset["defect_probability"] = dataset["defect_probability"].fillna(0.0)
+    dataset["quality_risk_index"] = (
+        0.32 * np.maximum(dataset["avg_temperature"] - 76, 0)
+        + 5.6 * np.maximum(dataset["avg_vibration"] - 2.3, 0)
+        + 0.55 * np.maximum(dataset["cycle_time_drift"], 0)
+        + 0.55 * dataset["pressure_instability"]
     )
-    features["defect_flag"] = features["defect_flag"].fillna(0).astype(int)
-    features["defect_count"] = features["defect_count"].fillna(0).astype(int)
-    features["yield_rate"] = safe_divide(features["defect_count"].rsub(100), np.repeat(100, len(features)))
-    return features.drop(columns=["date"])
+    dataset["anomaly_count_24h"] = (
+        dataset.sort_values("timestamp")
+        .groupby("machine_id")["anomaly_signal"]
+        .transform(lambda values: values.rolling(window=6, min_periods=1).apply(lambda x: float((x > 2.5).sum())))
+    )
+    dataset["yield_rate"] = safe_divide(100 - dataset["defect_count"], np.repeat(100, len(dataset)))
+    return dataset.drop(columns=["date"])
 
 
 def main() -> None:
+    """Generate the synthetic manufacturing data used by the production-oriented prototype."""
     ensure_directories()
     rng = np.random.default_rng(SEED)
 
     machines = build_machines(rng)
-    sensor_readings = build_sensor_readings(machines, rng)
-    production_batches = build_batches(sensor_readings, rng)
-    quality_checks = build_quality_checks(production_batches, machines, sensor_readings, rng)
-    downtime_events = build_downtime_events(sensor_readings, machines, rng)
     maintenance_logs = build_maintenance_logs(machines, rng)
-    processed_features = build_processed_features(sensor_readings, quality_checks, downtime_events)
+    sensor_readings = build_sensor_readings(machines, maintenance_logs, rng)
+    production_batches = build_production_batches(sensor_readings, rng)
+    quality_checks = build_quality_checks(machines, production_batches, sensor_readings, rng)
+    downtime_events = build_downtime_events(machines, maintenance_logs, sensor_readings, rng)
+    ml_training_dataset = build_ml_training_dataset(sensor_readings, quality_checks, downtime_events)
 
-    machines.to_csv(RAW_DATA_DIR / "machines.csv", index=False)
-    production_batches.to_csv(RAW_DATA_DIR / "production_batches.csv", index=False)
-    sensor_readings.to_csv(RAW_DATA_DIR / "sensor_readings.csv", index=False)
-    quality_checks.to_csv(RAW_DATA_DIR / "quality_checks.csv", index=False)
-    downtime_events.to_csv(RAW_DATA_DIR / "downtime_events.csv", index=False)
-    maintenance_logs.to_csv(RAW_DATA_DIR / "maintenance_logs.csv", index=False)
-    processed_features.to_csv(PROCESSED_DATA_DIR / "model_features.csv", index=False)
+    machines.to_csv(settings.raw_data_dir / "machines.csv", index=False)
+    production_batches.to_csv(settings.raw_data_dir / "production_batches.csv", index=False)
+    sensor_readings.to_csv(settings.raw_data_dir / "sensor_readings.csv", index=False)
+    quality_checks.to_csv(settings.raw_data_dir / "quality_checks.csv", index=False)
+    downtime_events.to_csv(settings.raw_data_dir / "downtime_events.csv", index=False)
+    maintenance_logs.to_csv(settings.raw_data_dir / "maintenance_logs.csv", index=False)
+    ml_training_dataset.to_csv(settings.processed_data_dir / "ml_training_dataset.csv", index=False)
+    ml_training_dataset.to_csv(settings.processed_data_dir / "model_features.csv", index=False)
 
-    print("Synthetic manufacturing prototype data generated.")
+    print("Synthetic manufacturing data generated for the production-oriented prototype.")
     print(f"Machines: {len(machines)}")
     print(f"Sensor readings: {len(sensor_readings)}")
     print(f"Quality checks: {len(quality_checks)}")

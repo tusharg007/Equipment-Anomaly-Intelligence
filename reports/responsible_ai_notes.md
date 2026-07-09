@@ -1,23 +1,22 @@
 # Responsible AI Notes
 
 ## Synthetic Data Limitations
-This prototype uses synthetic manufacturing data designed to simulate plausible relationships between process variables, quality outcomes, and downtime. It is useful for workflow demonstration, analytics automation, feature engineering discussion, model validation practice, and dashboard prototyping, but it is not evidence of plant performance.
+This production-oriented prototype uses synthetic manufacturing data designed to simulate plausible relationships between process variables, quality outcomes, anomalies, and downtime. It is useful for workflow validation, analytics engineering discussion, and model experimentation, but it is not evidence of real plant behavior.
 
-## False Positive and False Negative Risks
-- False positives can trigger unnecessary inspections, maintenance work, or operator concern.
-- False negatives can hide emerging process instability and delay intervention.
-- Because this is a prototype, thresholds should be tuned cautiously even in a simulated environment.
+## False Positive And False Negative Risks
+- False positives may trigger unnecessary inspection or maintenance review
+- False negatives may delay escalation of real process instability in a future real-data version
+- Thresholds should be calibrated carefully if the workflow is ever adapted to real data
 
 ## Monitoring Plan
-- Track defect prediction rate, alert volume, and downstream investigation outcomes.
-- Review whether high-risk scores cluster on certain machines due to synthetic assumptions instead of operational evidence.
-- Re-train or recalibrate when process conditions, product mix, or maintenance policies change.
-- Confirm that preprocessing logic, feature engineering assumptions, and dashboard definitions still match the manufacturing process being modeled.
+- Track alert volume, predicted defect rates, anomaly counts, and risk-band distributions
+- Monitor whether the same machines dominate outputs because of synthetic assumptions rather than operational evidence
+- Revisit preprocessing, feature engineering, and dashboard definitions whenever the modeled process changes
 
-## Bias and Governance Considerations
-- Shift effects are modeled only as process variance and should not be interpreted as worker performance judgment.
-- Operator team fields are included for workflow realism, not for ranking labor performance.
-- Governance should document data lineage, review access, and decision ownership before any real deployment work.
+## Bias And Governance Considerations
+- Shift and operator fields are included for manufacturing realism, not workforce evaluation
+- Outputs should remain explanatory and review-oriented
+- Any move beyond synthetic data should include governance for access control, auditability, and decision ownership
 
-## Decision Support Boundary
-Predictions should support engineering judgment, not replace it. Shutdown decisions, quality holds, and maintenance prioritization should remain human-led.
+## Human-In-The-Loop Decision Support
+Predictions, anomaly flags, and downtime risk bands should support engineering judgment, not replace it.

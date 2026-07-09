@@ -1,61 +1,84 @@
 from __future__ import annotations
 
-import numpy as np
 import pandas as pd
 from sklearn.ensemble import IsolationForest
 
-from utils import PREDICTIONS_DIR, PROCESSED_DATA_DIR, ensure_directories
+from config import settings
+from utils import ensure_directories, save_joblib
 
 
-FEATURE_FILE = PROCESSED_DATA_DIR / "model_features.csv"
+FEATURE_FILE = settings.processed_data_dir / "ml_training_dataset.csv"
 ANOMALY_FEATURES = [
     "avg_temperature",
     "avg_vibration",
     "avg_pressure",
     "avg_cycle_time",
+    "avg_energy_consumption",
     "pressure_instability",
     "anomaly_signal",
-    "machine_age_years",
     "previous_downtime_minutes",
 ]
+RULE_FEATURES = ["avg_temperature", "avg_vibration", "avg_pressure", "avg_cycle_time", "avg_energy_consumption"]
+
+
+def build_rule_reason(row: pd.Series) -> str:
+    reasons = []
+    if row["avg_temperature_zscore"] >= 3:
+        reasons.append("temperature_zscore")
+    if row["avg_vibration_zscore"] >= 3:
+        reasons.append("vibration_zscore")
+    if row["avg_pressure_zscore"] >= 3:
+        reasons.append("pressure_zscore")
+    if row["avg_cycle_time_zscore"] >= 3:
+        reasons.append("cycle_time_zscore")
+    if row["avg_energy_consumption_zscore"] >= 3:
+        reasons.append("energy_zscore")
+    if row["iforest_anomaly_flag"] == 1:
+        reasons.append("iforest_outlier")
+    return ",".join(reasons) if reasons else "none"
 
 
 def main() -> None:
     ensure_directories()
     data = pd.read_csv(FEATURE_FILE)
 
-    isolation_forest = IsolationForest(
-        n_estimators=250, contamination=0.06, random_state=42
-    )
+    isolation_forest = IsolationForest(n_estimators=250, contamination=0.06, random_state=42)
     isolation_forest.fit(data[ANOMALY_FEATURES])
     data["iforest_score"] = -isolation_forest.score_samples(data[ANOMALY_FEATURES])
     data["iforest_anomaly_flag"] = (isolation_forest.predict(data[ANOMALY_FEATURES]) == -1).astype(int)
 
-    z_scores = (
-        data[ANOMALY_FEATURES]
-        .apply(lambda column: (column - column.mean()) / column.std(ddof=0))
-        .abs()
-    )
-    data["zscore_anomaly_flag"] = (z_scores.max(axis=1) >= 3.0).astype(int)
-    data["combined_anomaly_flag"] = ((data["iforest_anomaly_flag"] + data["zscore_anomaly_flag"]) > 0).astype(int)
+    for feature in RULE_FEATURES:
+        zscore_column = f"{feature}_zscore"
+        data[zscore_column] = ((data[feature] - data[feature].mean()) / data[feature].std(ddof=0)).abs()
+
+    data["rule_anomaly_flag"] = (
+        data[[f"{feature}_zscore" for feature in RULE_FEATURES]].max(axis=1) >= 3.0
+    ).astype(int)
+    data["anomaly_flag"] = ((data["iforest_anomaly_flag"] + data["rule_anomaly_flag"]) > 0).astype(int)
     data["anomaly_score"] = (
         60 * data["iforest_score"].rank(pct=True)
-        + 40 * z_scores.max(axis=1).clip(upper=5).div(5)
+        + 40 * data[[f"{feature}_zscore" for feature in RULE_FEATURES]].max(axis=1).clip(upper=5) / 5
     ).round(2)
+    data["anomaly_reason"] = data.apply(build_rule_reason, axis=1)
 
-    machine_scores = (
-        data.groupby(["machine_id", "line_id"], as_index=False)
-        .agg(
-            anomaly_score=("anomaly_score", "mean"),
-            anomaly_count=("combined_anomaly_flag", "sum"),
-            latest_temperature=("avg_temperature", "last"),
-            latest_vibration=("avg_vibration", "last"),
-            latest_cycle_time=("avg_cycle_time", "last"),
-        )
-        .sort_values(["anomaly_score", "anomaly_count"], ascending=False)
-    )
-    machine_scores.to_csv(PREDICTIONS_DIR / "anomaly_scores.csv", index=False)
-    print(machine_scores.head(10).to_string(index=False))
+    output_columns = [
+        "machine_id",
+        "line_id",
+        "timestamp",
+        "shift",
+        "anomaly_score",
+        "anomaly_flag",
+        "anomaly_reason",
+        "avg_temperature",
+        "avg_vibration",
+        "avg_pressure",
+        "avg_cycle_time",
+        "avg_energy_consumption",
+    ]
+    anomaly_scores = data[output_columns].sort_values(["anomaly_flag", "anomaly_score"], ascending=[False, False])
+    anomaly_scores.to_csv(settings.predictions_dir / "anomaly_scores.csv", index=False)
+    save_joblib(isolation_forest, settings.anomaly_model_dir / "isolation_forest.joblib")
+    print(anomaly_scores.head(10).to_string(index=False))
 
 
 if __name__ == "__main__":

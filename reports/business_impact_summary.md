@@ -1,29 +1,26 @@
 # Business Impact Summary
 
 ## Prototype Value
-This manufacturing analytics prototype shows how machine telemetry, quality outcomes, downtime patterns, and maintenance prioritization can be connected in one local workflow using Python, PostgreSQL, dbt, and Metabase.
+This production-oriented prototype demonstrates how manufacturing analytics can connect machine telemetry, quality outcomes, downtime patterns, and maintenance prioritization in one professional repository.
 
 ## Operational Questions Addressed
-- Which machines show the highest defect or downtime risk?
-- Which lines are losing the most availability?
-- Which sensor patterns appear before downtime or quality issues?
-- Which machines should be prioritized for maintenance review?
-
-## Potential Impact Areas
-- Earlier detection of quality drift
-- Better prioritization of maintenance labor
-- Faster daily review of line performance
-- Clearer conversations between operations, quality, and reliability teams
+- Which machines show the highest quality or downtime risk?
+- Which production lines are losing the most efficiency?
+- Which sensor behaviors appear before defects or downtime?
+- Which machines should be reviewed first for preventive maintenance?
 
 ## Analytics and ML Contribution
-- Data preprocessing organizes raw machine, batch, downtime, and maintenance records into analytics-ready features
-- Feature engineering converts sensor behavior into quality and reliability indicators such as cycle time drift, pressure instability, and maintenance recency
-- Model validation compares baseline and nonlinear classifiers for synthetic defect prediction
-- Anomaly detection and downtime scoring provide machine-level operational prioritization signals
-- Dashboarding translates technical outputs into manufacturing KPI views for stakeholders
+- Data preprocessing organizes machine, batch, downtime, and maintenance data into analytics-ready features
+- Feature engineering converts sensor behavior into quality prediction and equipment anomaly detection signals
+- Model validation supports honest comparison between baseline and nonlinear classifiers
+- Downtime risk scoring converts technical outputs into maintenance priority recommendations
+- Metabase-ready queries surface OEE-style operational KPIs for stakeholder review
 
-## GM Role Alignment
-This project aligns well with a General Motors AI/ML intern role because it combines manufacturing context, analytics automation, dashboard preparation, model experimentation, and practical communication of results without overclaiming production readiness.
+## Business-Facing Value
+- Earlier visibility into quality drift
+- Faster triage of abnormal machine conditions
+- More structured maintenance review discussions
+- Better linkage between process behavior and operational efficiency
 
 ## Positioning Note
-Because the dataset is synthetic, the value of the project is in demonstrating a sound prototype workflow, not in claiming plant-validated business impact.
+Because the data is synthetic, this repository supports credible workflow discussion and resume claims about analytics engineering, ML prototyping, and manufacturing problem framing rather than claims about real plant deployment.

@@ -1,9 +1,19 @@
--- Overall manufacturing KPIs
+-- Manufacturing overview KPIs
 select
+    count(distinct batch_id) as total_batches,
     round(avg(defect_flag)::numeric, 4) as defect_rate,
-    round(avg(defect_probability)::numeric, 4) as avg_predicted_defect_probability,
-    sum(defect_count) as total_defect_count
+    sum(defect_count) as total_defects,
+    coalesce((select sum(downtime_minutes) from downtime_events), 0) as total_downtime_minutes
 from quality_checks;
+
+-- Defect rate by line
+select
+    line_id,
+    round(avg(defect_flag)::numeric, 4) as defect_rate,
+    sum(defect_count) as defect_count
+from quality_checks
+group by 1
+order by defect_rate desc;
 
 -- Defect rate by machine
 select
@@ -15,14 +25,14 @@ from quality_checks
 group by 1, 2
 order by defect_rate desc;
 
--- Defect rate by production line
+-- Defect trend over time
 select
-    line_id,
+    cast(timestamp as date) as metric_day,
     round(avg(defect_flag)::numeric, 4) as defect_rate,
     sum(defect_count) as defect_count
 from quality_checks
 group by 1
-order by defect_rate desc;
+order by 1;
 
 -- Downtime by machine
 select
@@ -33,26 +43,7 @@ from downtime_events
 group by 1, 2
 order by downtime_minutes desc;
 
--- High-risk machines
-select
-    machine_id,
-    line_id,
-    downtime_risk_score,
-    risk_band,
-    maintenance_priority_recommendation
-from downtime_risk_scores
-order by downtime_risk_score desc;
-
--- Anomaly trend by day
-select
-    cast(timestamp as date) as metric_day,
-    round(avg(anomaly_signal)::numeric, 3) as avg_anomaly_signal,
-    sum(case when anomaly_signal > 2.5 then 1 else 0 end) as elevated_anomaly_windows
-from model_features
-group by 1
-order by 1;
-
--- OEE by production line
+-- OEE-style KPI by line
 select
     line_id,
     avg(oee_score) as avg_oee_score,
@@ -63,28 +54,52 @@ from analytics.mart_oee_dashboard
 group by 1
 order by avg_oee_score desc;
 
+-- Anomaly trend by day
+select
+    cast(timestamp as date) as metric_day,
+    avg(anomaly_score) as avg_anomaly_score,
+    sum(anomaly_flag) as anomaly_count
+from anomaly_scores
+group by 1
+order by 1;
+
 -- Cycle time drift by machine
 select
     machine_id,
     line_id,
     round(avg(cycle_time_drift)::numeric, 3) as avg_cycle_time_drift
-from model_features
+from ml_training_dataset
 group by 1, 2
 order by avg_cycle_time_drift desc;
 
--- Maintenance priority list
+-- High-risk machines
 select
     machine_id,
     line_id,
     downtime_risk_score,
     risk_band,
+    top_risk_driver,
     maintenance_priority_recommendation
 from downtime_risk_scores
-order by
-    case risk_band when 'High' then 1 when 'Medium' then 2 else 3 end,
-    downtime_risk_score desc;
+order by downtime_risk_score desc;
 
--- Top defect drivers
+-- Maintenance priority list
+select
+    machine_id,
+    line_id,
+    risk_band,
+    maintenance_priority_recommendation,
+    top_risk_driver
+from maintenance_priority
+order by
+    case risk_band
+        when 'Critical' then 1
+        when 'High' then 2
+        when 'Medium' then 3
+        else 4
+    end;
+
+-- Top defect drivers / feature importance
 select
     feature,
     importance

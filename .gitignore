@@ -1,8 +1,14 @@
 __pycache__/
 *.pyc
 .venv/
-models/
 dbt_mfg/target/
 dbt_mfg/dbt_packages/
 .dbt/
 metabase/metabase.db
+.env
+models/**/*.joblib
+data/predictions/batch_defect_predictions.csv
+reports/data_quality_report.json
+reports/classification_report.json
+reports/confusion_matrix.csv
+reports/metrics.json

@@ -2,6 +2,8 @@ services:
   postgres:
     image: postgres:16
     container_name: mfg_quality_postgres
+    env_file:
+      - .env
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-manufacturing}
       POSTGRES_USER: ${POSTGRES_USER:-manufacturing}
@@ -22,6 +24,17 @@ services:
       MB_DB_FILE: /metabase-data/metabase.db
     volumes:
       - metabase_data:/metabase-data
+
+  api:
+    build: .
+    container_name: mfg_quality_api
+    depends_on:
+      - postgres
+    env_file:
+      - .env
+    ports:
+      - "${API_PORT:-8000}:8000"
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000
 
 volumes:
   postgres_data:

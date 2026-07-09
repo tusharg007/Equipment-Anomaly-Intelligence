@@ -1,0 +1,44 @@
+version: 2
+
+models:
+  - name: stg_machines
+    columns:
+      - name: machine_id
+        tests: [not_null, unique]
+      - name: line_id
+        tests: [not_null]
+  - name: stg_sensor_readings
+    columns:
+      - name: machine_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_machines')
+              field: machine_id
+      - name: shift
+        tests:
+          - accepted_values:
+              values: ['Night', 'Day', 'Evening']
+  - name: stg_quality_checks
+    columns:
+      - name: quality_check_id
+        tests: [not_null, unique]
+      - name: defect_type
+        tests:
+          - not_null
+  - name: stg_downtime_events
+    columns:
+      - name: downtime_event_id
+        tests: [not_null, unique]
+  - name: stg_maintenance_logs
+    columns:
+      - name: maintenance_id
+        tests: [not_null, unique]
+  - name: stg_production_batches
+    columns:
+      - name: batch_id
+        tests: [not_null, unique]
+      - name: shift
+        tests:
+          - accepted_values:
+              values: ['Night', 'Day', 'Evening']

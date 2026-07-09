@@ -1,35 +1,34 @@
 # Model Card
 
 ## Model Purpose
-This manufacturing analytics prototype estimates defect risk at the machine-batch level so manufacturing, quality, and maintenance teams can prioritize investigation earlier.
+This production-oriented prototype estimates defect risk at the machine-batch level to support quality prediction and earlier manufacturing investigation.
 
 ## Target Variable
-`defect_flag` indicates whether the synthetic quality check for a machine and batch included a defect.
+`defect_flag` indicates whether a synthetic machine-batch quality check contained a defect.
 
 ## Features
 - Sensor behavior: temperature, vibration, pressure, cycle time, energy consumption
-- Stability indicators: pressure instability, anomaly signal, cycle time drift
+- Stability indicators: pressure instability, anomaly signal, cycle time drift, pressure deviation
 - Operating context: shift, line, maintenance recency
-- Asset context: machine age and previous downtime minutes
-- Preprocessing and engineered features are derived from synthetic machine, batch, downtime, and maintenance data
-
-## Metrics
-Metrics are generated in `reports/model_evaluation.md` after training and include ROC-AUC, precision, recall, F1, and confusion matrix counts.
+- Asset context: machine age, baseline health, and previous downtime
 
 ## Modeling Approach
-- Baseline model: Logistic Regression
-- Tree-based model: RandomForest
-- Optional model: XGBoost if installed
-- Supporting method: Isolation Forest for separate anomaly detection workflow
+- Logistic Regression baseline
+- RandomForest
+- Optional XGBoost when installed
+- Isolation Forest is used separately for equipment anomaly detection rather than the supervised quality model
+
+## Metrics
+Metrics are written to:
+- `reports/model_evaluation.md`
+- `reports/metrics.json`
+- `reports/classification_report.json`
+- `reports/confusion_matrix.csv`
 
 ## Limitations
-- The dataset is synthetic and calibrated for interview-defensible realism, not for plant deployment.
-- Labels are generated from simulated rules plus randomness, so performance should not be interpreted as plant-validated accuracy.
-- Feature drift, sensor outages, and operator behavior are simplified.
-- This model is best positioned as a prototype for experimentation, analytics discussion, and workflow demonstration.
+- The dataset is synthetic and designed for workflow realism rather than plant validation
+- Labels are generated from modeled relationships plus randomness
+- Performance should be described as prototype validation, not operational accuracy
 
 ## Responsible Use
-Use predictions to flag higher-risk conditions for human review, not to automate scrap, shutdown, or operator performance decisions.
-
-## Human-In-The-Loop Recommendation
-Require manufacturing or quality engineers to review predicted high-risk batches alongside raw sensor context, maintenance notes, and recent downtime events before action.
+Use outputs as human-in-the-loop decision support for quality review, not for autonomous scrap or shutdown decisions.
