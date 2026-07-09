@@ -1,4 +1,4 @@
-# Manufacturing Quality & Equipment Anomaly Intelligence Platform
+﻿# Manufacturing Quality & Equipment Anomaly Intelligence Platform
 
 A production-oriented prototype for manufacturing analytics, quality prediction, equipment anomaly detection, downtime risk scoring, and OEE-style operational KPIs. The repository uses synthetic manufacturing data and honest documentation to demonstrate a professional end-to-end AI/ML and analytics workflow suitable for a General Motors AI/ML Intern portfolio conversation.
 
@@ -229,3 +229,26 @@ make test
 - Add plant-specific business rules for downtime thresholds
 - Add database-backed API queries and pagination
 - Add richer dashboard drill-downs by line, shift, and product type
+
+## Windows PowerShell Options
+Run the project from PowerShell with the helper scripts in `scripts/`:
+
+### Demo Pipeline
+```powershell
+.\scripts\run_demo.ps1
+```
+
+### Full Stack With Docker, PostgreSQL, dbt, and Metabase
+```powershell
+.\scripts\run_full_stack.ps1
+```
+
+### Run FastAPI Locally
+```powershell
+.\scripts\run_api.ps1
+```
+
+### Verify Generated Outputs
+```powershell
+.\scripts\verify_outputs.ps1
+```
