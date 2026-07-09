@@ -1,4 +1,4 @@
-__pycache__/
+﻿__pycache__/
 *.pyc
 .venv/
 dbt_mfg/target/
@@ -12,3 +12,11 @@ reports/data_quality_report.json
 reports/classification_report.json
 reports/confusion_matrix.csv
 reports/metrics.json
+
+data/raw/*.csv
+data/processed/*.csv
+data/predictions/*.csv
+!data/sample/
+!data/sample/*.csv
+!data/predictions/maintenance_priority.csv
+!data/processed/oee_summary.csv

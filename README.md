@@ -84,6 +84,20 @@ The synthetic data simulates:
 ### Synthetic Data Limitations
 All data is synthetic. It is designed to create realistic and defensible relationships for experimentation, feature engineering, model validation, and dashboard prototyping. It should not be described as plant-validated or operationally deployed.
 
+
+## Sample Outputs
+To make the repository easier to browse on GitHub, the project includes small representative sample files in `data/sample/`.
+
+Included sample files:
+- `data/sample/sample_machines.csv`
+- `data/sample/sample_sensor_readings.csv`
+- `data/sample/sample_defect_predictions.csv`
+- `data/sample/sample_anomaly_scores.csv`
+- `data/sample/sample_downtime_risk_scores.csv`
+- `data/sample/sample_maintenance_priority.csv` when maintenance priority output is available
+- `data/sample/sample_oee_summary.csv` when an OEE summary output is available
+
+These files contain only 10 to 30 rows each and are intended for quick review, documentation, and recruiter-friendly browsing. The larger generated files in `data/raw`, `data/processed`, and `data/predictions` can be regenerated locally from the pipeline.
 ## Pipeline Workflow
 1. Generate synthetic raw manufacturing data
 2. Build processed ML features in `data/processed/ml_training_dataset.csv`
@@ -252,3 +266,4 @@ Run the project from PowerShell with the helper scripts in `scripts/`:
 ```powershell
 .\scripts\verify_outputs.ps1
 ```
+
